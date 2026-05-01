@@ -7,6 +7,13 @@ import { TasksModule } from './tasks/tasks.module';
 import { FilesModule } from './files/files.module';
 import { ConfigManagementModule } from './config/config.module';
 import { DashboardModule } from './dashboard/dashboard.module';
+import { BomModule } from './bom/bom.module';
+import { ProcessModule } from './process/process.module';
+import { QueryModule } from './query/query.module';
+import { ResourcesModule } from './resources/resources.module';
+import { KnowledgeModule } from './knowledge/knowledge.module';
+import { TemplateModule } from './template/template.module';
+import { PersonalModule } from './personal/personal.module';
 
 @Module({
   imports: [
@@ -18,6 +25,13 @@ import { DashboardModule } from './dashboard/dashboard.module';
     FilesModule,
     ConfigManagementModule,
     DashboardModule,
+    BomModule,
+    ProcessModule,
+    QueryModule,
+    ResourcesModule,
+    KnowledgeModule,
+    TemplateModule,
+    PersonalModule,
   ],
 })
 export class AppModule {}
