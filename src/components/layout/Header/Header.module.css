@@ -85,3 +85,50 @@
 .langBtn:hover {
   color: #3366FF;
 }
+
+.notifPanel {
+  width: 320px;
+  max-height: 400px;
+}
+
+.notifHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 0 12px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #333333;
+  border-bottom: 1px solid #E8E8E8;
+}
+
+.notifItem {
+  padding: 8px 0 !important;
+  cursor: pointer;
+}
+
+.notifItem:hover {
+  background: #F5F7FA;
+}
+
+.notifUnread {
+  background: #F0F5FF;
+}
+
+.notifTitle {
+  font-size: 13px;
+  font-weight: 500;
+  color: #333333;
+}
+
+.notifDesc {
+  font-size: 12px;
+  color: #666666;
+  margin-top: 2px;
+}
+
+.notifTime {
+  font-size: 11px;
+  color: #999999;
+  margin-top: 4px;
+}
