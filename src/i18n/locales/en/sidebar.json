@@ -1,0 +1,14 @@
+{
+  "workspace": "Workspace",
+  "project": "Project Management",
+  "dashboard": "Central Dashboard",
+  "fileMgmt": "File Management",
+  "bomMgmt": "BOM Management",
+  "processMgmt": "Process Management",
+  "config": "Configuration",
+  "queryStats": "Query & Statistics",
+  "resources": "General Resources",
+  "knowledge": "Knowledge Management",
+  "template": "Template Definition",
+  "personalFolder": "Personal Folder"
+}

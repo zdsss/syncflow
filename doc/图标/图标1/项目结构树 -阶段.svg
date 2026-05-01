@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="25.905" height="23.799" viewBox="0 0 25.905 23.799">
+  <g id="组_318" data-name="组 318" transform="translate(-87 -350.045)">
+    <g id="组_282" data-name="组 282" transform="translate(-15 -152.955)">
+      <path id="路径_168" data-name="路径 168" d="M-.308,10l6-10" transform="translate(105.239 506.5)" fill="none" stroke="#36f" stroke-width="1"/>
+      <g id="椭圆_52" data-name="椭圆 52" transform="translate(102.431 514)" fill="#36f" stroke="#36f" stroke-width="1">
+        <circle cx="2.5" cy="2.5" r="2.5" stroke="none"/>
+        <circle cx="2.5" cy="2.5" r="2" fill="none"/>
+      </g>
+      <path id="路径_131" data-name="路径 131" d="M7.433,14.629-.27,1.068" transform="translate(111.311 506.103)" fill="#36f" stroke="#36f" stroke-width="1"/>
+      <g id="椭圆_53" data-name="椭圆 53" transform="translate(116.431 518)" fill="#36f" stroke="#36f" stroke-width="1">
+        <circle cx="2.5" cy="2.5" r="2.5" stroke="none"/>
+        <circle cx="2.5" cy="2.5" r="2" fill="none"/>
+      </g>
+      <g id="椭圆_54" data-name="椭圆 54" transform="translate(122.905 503.245)" fill="#36f" stroke="#36f" stroke-width="1">
+        <circle cx="2.5" cy="2.5" r="2.5" stroke="none"/>
+        <circle cx="2.5" cy="2.5" r="2" fill="none"/>
+      </g>
+      <path id="路径_166" data-name="路径 166" d="M-.308,14.76,5.905,0" transform="translate(119.5 505.745)" fill="none" stroke="#36f" stroke-width="1"/>
+      <path id="路径_132" data-name="路径 132" d="M25.625,0H0" transform="translate(102 526.299)" fill="none" stroke="#36f" stroke-width="1"/>
+      <g id="椭圆_51" data-name="椭圆 51" transform="translate(107.431 503)" fill="#ff9c00" stroke="#ff9c00" stroke-width="1">
+        <circle cx="3.5" cy="3.5" r="3.5" stroke="none"/>
+        <circle cx="3.5" cy="3.5" r="3" fill="none"/>
+      </g>
+    </g>
+  </g>
+</svg>

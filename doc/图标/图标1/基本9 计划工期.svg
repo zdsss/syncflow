@@ -1,0 +1,46 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="27" height="24.698" viewBox="0 0 27 24.698">
+  <g id="组_185" data-name="组 185" transform="translate(-228.505 -226.5)">
+    <g id="组_29" data-name="组 29" transform="translate(229 226.5)">
+      <g id="矩形_4" data-name="矩形 4" transform="translate(-0.495 1.698)" fill="none" stroke="#36f" stroke-width="1">
+        <rect width="27" height="23" stroke="none"/>
+        <rect x="0.5" y="0.5" width="26" height="22" fill="none"/>
+      </g>
+      <g id="矩形_5" data-name="矩形 5" transform="translate(-0.495 1.698)" fill="none" stroke="#36f" stroke-width="1">
+        <rect width="27" height="7" stroke="none"/>
+        <rect x="0.5" y="0.5" width="26" height="6" fill="none"/>
+      </g>
+      <g id="路径_19" data-name="路径 19" transform="translate(5.841)" fill="none">
+        <path d="M0,0H4.381V6.36H0Z" stroke="none"/>
+        <path d="M 0.9999966621398926 1 L 0.9999966621398926 5.359800338745117 L 3.381056785583496 5.359800338745117 L 3.381056785583496 1 L 0.9999966621398926 1 M -3.337860107421875e-06 0 L 4.381056785583496 0 L 4.381056785583496 6.359800338745117 L -3.337860107421875e-06 6.359800338745117 L -3.337860107421875e-06 0 Z" stroke="none" fill="#36f"/>
+      </g>
+      <g id="路径_20" data-name="路径 20" transform="translate(16.064)" fill="none">
+        <path d="M0,0H4.381V6.36H0Z" stroke="none"/>
+        <path d="M 0.9999966621398926 1 L 0.9999966621398926 5.359800338745117 L 3.381056785583496 5.359800338745117 L 3.381056785583496 1 L 0.9999966621398926 1 M -3.337860107421875e-06 0 L 4.381056785583496 0 L 4.381056785583496 6.359800338745117 L -3.337860107421875e-06 6.359800338745117 L -3.337860107421875e-06 0 Z" stroke="none" fill="#36f"/>
+      </g>
+    </g>
+    <g id="椭圆_15" data-name="椭圆 15" transform="translate(241.505 238.198)" fill="none" stroke="#36f" stroke-width="1">
+      <circle cx="1" cy="1" r="1" stroke="none"/>
+      <circle cx="1" cy="1" r="0.5" fill="none"/>
+    </g>
+    <g id="椭圆_16" data-name="椭圆 16" transform="translate(235.505 238.198)" fill="none" stroke="#36f" stroke-width="1">
+      <circle cx="1" cy="1" r="1" stroke="none"/>
+      <circle cx="1" cy="1" r="0.5" fill="none"/>
+    </g>
+    <g id="椭圆_17" data-name="椭圆 17" transform="translate(247.505 238.198)" fill="none" stroke="#36f" stroke-width="1">
+      <circle cx="1" cy="1" r="1" stroke="none"/>
+      <circle cx="1" cy="1" r="0.5" fill="none"/>
+    </g>
+    <g id="椭圆_18" data-name="椭圆 18" transform="translate(235.505 243.198)" fill="none" stroke="#36f" stroke-width="1">
+      <ellipse cx="1" cy="1.5" rx="1" ry="1.5" stroke="none"/>
+      <ellipse cx="1" cy="1.5" rx="0.5" ry="1" fill="none"/>
+    </g>
+    <g id="椭圆_19" data-name="椭圆 19" transform="translate(241.505 243.198)" fill="none" stroke="#36f" stroke-width="1">
+      <ellipse cx="1" cy="1.5" rx="1" ry="1.5" stroke="none"/>
+      <ellipse cx="1" cy="1.5" rx="0.5" ry="1" fill="none"/>
+    </g>
+    <g id="椭圆_20" data-name="椭圆 20" transform="translate(247.505 243.198)" fill="none" stroke="#36f" stroke-width="1">
+      <ellipse cx="1" cy="1.5" rx="1" ry="1.5" stroke="none"/>
+      <ellipse cx="1" cy="1.5" rx="0.5" ry="1" fill="none"/>
+    </g>
+  </g>
+</svg>

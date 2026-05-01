@@ -1,0 +1,39 @@
+.page {
+  padding: 24px;
+  background: #F5F7FA;
+  min-height: 100%;
+}
+
+.title {
+  font-size: 28px;
+  font-weight: 600;
+  color: #1A1A1A;
+  margin: 0 0 24px;
+}
+
+.body {
+  background: #FFFFFF;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  padding: 16px;
+}
+
+.dualPanel {
+  display: flex;
+  gap: 16px;
+  min-height: 500px;
+}
+
+.leftPanel {
+  width: 30%;
+  min-width: 240px;
+  border-right: 1px solid #E8E8E8;
+  padding-right: 16px;
+  display: flex;
+  flex-direction: column;
+}
+
+.rightPanel {
+  width: 70%;
+  padding-left: 16px;
+}

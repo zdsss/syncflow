@@ -1,0 +1,113 @@
+.container {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 16px;
+}
+
+.header {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1A1A1A;
+  margin-bottom: 12px;
+}
+
+.weekGrid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 8px;
+}
+
+.dayColumn {
+  min-width: 0;
+}
+
+.dayHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 6px 8px;
+  background: #F5F7FA;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.dayLabel {
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+}
+
+.dayCount {
+  font-size: 12px;
+  color: #999;
+}
+
+.taskList {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 80px;
+}
+
+.emptyDay {
+  font-size: 12px;
+  color: #ccc;
+  text-align: center;
+  padding: 24px 0;
+}
+
+.taskCard {
+  display: flex;
+  background: #fff;
+  border: 1px solid #f0f0f0;
+  border-radius: 6px;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+  cursor: pointer;
+}
+
+.taskCard:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.priorityBar {
+  width: 3px;
+  min-height: 100%;
+  flex-shrink: 0;
+}
+
+.taskContent {
+  padding: 6px 8px;
+  flex: 1;
+  min-width: 0;
+}
+
+.taskTitle {
+  font-size: 12px;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.taskMeta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.statusTag {
+  font-size: 11px;
+  padding: 0 6px;
+  border-radius: 100px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.dueDate {
+  font-size: 11px;
+  color: #999;
+}

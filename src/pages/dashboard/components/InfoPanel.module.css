@@ -1,0 +1,131 @@
+.panel {
+  width: 320px;
+  min-width: 320px;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  height: 100%;
+}
+
+.section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sectionTitle {
+  font-size: 14px;
+  font-weight: 500;
+  color: #1A1A1A;
+  padding-bottom: 4px;
+}
+
+.metricsRow {
+  display: flex;
+  gap: 8px;
+}
+
+.metricCard {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  background: #F5F7FA;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.metricCard:hover {
+  background: #EBF0FF;
+}
+
+.metricValue {
+  font-size: 20px;
+  font-weight: 600;
+  color: #1A1A1A;
+}
+
+.metricLabel {
+  font-size: 12px;
+  color: #666;
+}
+
+.todoStats {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: #F5F7FA;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.todoRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.todoLabel {
+  font-size: 14px;
+  color: #333;
+  min-width: 56px;
+}
+
+.todoEn {
+  font-size: 12px;
+  color: #999;
+  flex: 1;
+}
+
+.overdueList {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.overdueItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #FFF1F0;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.overdueItem:hover {
+  background: #FFE0DF;
+}
+
+.overdueName {
+  font-size: 13px;
+  color: #333;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  margin-right: 8px;
+}
+
+.overdueTag {
+  font-size: 12px;
+  color: #FF4D4F;
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.emptyText {
+  font-size: 13px;
+  color: #999;
+  text-align: center;
+  padding: 16px 0;
+}

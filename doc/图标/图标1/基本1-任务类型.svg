@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="26.5" height="23" viewBox="0 0 26.5 23">
+  <g id="组_279" data-name="组 279" transform="translate(-225 -408)">
+    <g id="矩形_77" data-name="矩形 77" transform="translate(225 408)" fill="none" stroke="#36f" stroke-width="1">
+      <rect width="9" height="9" stroke="none"/>
+      <rect x="0.5" y="0.5" width="8" height="8" fill="none"/>
+    </g>
+    <g id="矩形_78" data-name="矩形 78" transform="translate(225 422)" fill="none" stroke="#36f" stroke-width="1">
+      <rect width="9" height="9" stroke="none"/>
+      <rect x="0.5" y="0.5" width="8" height="8" fill="none"/>
+    </g>
+    <line id="直线_71" data-name="直线 71" x1="13" transform="translate(238.5 408.5)" fill="none" stroke="#36f" stroke-width="1"/>
+    <line id="直线_72" data-name="直线 72" x1="13" transform="translate(238.5 415.5)" fill="none" stroke="#36f" stroke-width="1"/>
+    <line id="直线_73" data-name="直线 73" x1="13" transform="translate(238.5 423.5)" fill="none" stroke="#36f" stroke-width="1"/>
+    <line id="直线_74" data-name="直线 74" x1="13" transform="translate(238.5 430.5)" fill="none" stroke="#36f" stroke-width="1"/>
+  </g>
+</svg>

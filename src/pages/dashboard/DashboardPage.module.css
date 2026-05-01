@@ -1,0 +1,21 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  height: 100%;
+  overflow: hidden;
+}
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-shrink: 0;
+}
+
+.title {
+  font-size: 22px;
+  font-weight: 600;
+  color: #1A1A1A;
+  line-height: 30px;
+}

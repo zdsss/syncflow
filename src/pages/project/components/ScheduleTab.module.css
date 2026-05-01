@@ -1,0 +1,130 @@
+.container {
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  overflow: hidden;
+}
+
+.tableWrapper {
+  overflow-x: auto;
+  overflow-y: auto;
+  max-height: calc(100vh - 280px);
+}
+
+.table {
+  border-collapse: collapse;
+  width: max-content;
+  min-width: 100%;
+}
+
+.fixedHeader {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: #FAFAFA;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  border-right: 1px solid #E8E8E8;
+  border-bottom: 1px solid #E8E8E8;
+  text-align: left;
+}
+
+.monthHeader {
+  background: #FAFAFA;
+  padding: 6px 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #333;
+  border-right: 1px solid #E8E8E8;
+  border-bottom: 1px solid #E8E8E8;
+  text-align: center;
+}
+
+.weekHeader {
+  background: #FAFAFA;
+  padding: 4px 2px;
+  font-size: 11px;
+  font-weight: 400;
+  color: #666;
+  border-right: 1px solid #F0F0F0;
+  border-bottom: 1px solid #E8E8E8;
+  text-align: center;
+  width: 60px;
+  min-width: 60px;
+}
+
+.bodyRow {
+  height: 40px;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.bodyRow:hover {
+  background: #F0F5FF;
+}
+
+.bodyRow:nth-child(even) {
+  background: #FAFAFA;
+}
+
+.bodyRow:nth-child(even):hover {
+  background: #F0F5FF;
+}
+
+.fixedCell {
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  background: inherit;
+  padding: 6px 12px;
+  border-right: 1px solid #E8E8E8;
+  border-bottom: 1px solid #F0F0F0;
+  vertical-align: middle;
+}
+
+.taskName {
+  font-size: 13px;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  max-width: 180px;
+}
+
+.progressText {
+  font-size: 13px;
+  color: #3366FF;
+  font-weight: 500;
+}
+
+.statusTag {
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 100px;
+  line-height: 18px;
+  white-space: nowrap;
+}
+
+.timelineCell {
+  padding: 0;
+  border-bottom: 1px solid #F0F0F0;
+  position: relative;
+  vertical-align: middle;
+}
+
+.ganttBar {
+  position: absolute;
+  top: 8px;
+  height: 24px;
+  border-radius: 4px;
+  opacity: 0.85;
+  cursor: pointer;
+  transition: opacity 0.2s;
+}
+
+.ganttBar:hover {
+  opacity: 1;
+}

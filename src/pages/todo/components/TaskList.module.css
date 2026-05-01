@@ -1,0 +1,149 @@
+.taskListWrapper {
+  flex: 1;
+  background: #fff;
+  border-radius: var(--radius-md, 8px);
+  box-shadow: var(--shadow-1, 0 2px 8px rgba(0, 0, 0, 0.08));
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.tableWrapper {
+  flex: 1;
+  overflow: auto;
+}
+
+/* Row hover */
+:global(.ant-table-tbody) > tr:hover > td {
+  background: var(--color-bg-active, #F0F5FF) !important;
+}
+
+/* Remove default table borders */
+:global(.ant-table) {
+  border-radius: 0 !important;
+}
+
+:global(.ant-table-thead) > tr > th {
+  background: #FAFAFA !important;
+  font-size: 13px;
+  color: var(--color-text-secondary, #666);
+  font-weight: 500;
+  border-bottom: 1px solid var(--color-border, #E8E8E8) !important;
+}
+
+:global(.ant-table-tbody) > tr > td {
+  font-size: 13px;
+  color: var(--color-text-primary, #333);
+  border-bottom: 1px solid #F0F0F0 !important;
+  transition: background 0.2s;
+}
+
+/* Task name */
+.taskName {
+  cursor: pointer;
+  color: var(--color-text-primary, #333);
+  font-weight: 500;
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.taskName:hover {
+  color: var(--color-primary-5, #3366FF);
+}
+
+/* Status badge */
+.statusBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full, 100px);
+  font-size: 12px;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: opacity 0.2s;
+}
+
+.statusBadge:hover {
+  opacity: 0.85;
+}
+
+/* Priority badge */
+.priorityBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  padding: 2px 8px;
+  border-radius: var(--radius-full, 100px);
+  font-size: 12px;
+  white-space: nowrap;
+}
+
+/* Assignee */
+.assignee {
+  font-size: 13px;
+  color: var(--color-text-primary, #333);
+}
+
+/* Due date */
+.dueDate {
+  font-size: 13px;
+  color: var(--color-text-secondary, #666);
+  white-space: nowrap;
+}
+
+/* Progress */
+.progressCell {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 120px;
+}
+
+.progressBar {
+  flex: 1;
+  height: 6px;
+  background: #F0F0F0;
+  border-radius: 3px;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+.progressFill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.progressText {
+  font-size: 12px;
+  color: var(--color-text-secondary, #666);
+  min-width: 32px;
+  text-align: right;
+  white-space: nowrap;
+}
+
+.progressInput {
+  width: 48px;
+  height: 24px;
+  border: 1px solid var(--color-primary-5, #3366FF);
+  border-radius: var(--radius-sm, 4px);
+  text-align: center;
+  font-size: 12px;
+  outline: none;
+}
+
+/* Pagination wrapper */
+.paginationWrapper {
+  padding: 12px 16px;
+  display: flex;
+  justify-content: flex-end;
+  border-top: 1px solid #F0F0F0;
+  flex-shrink: 0;
+}

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="28" height="31.854" viewBox="0 0 28 31.854">
+  <g id="组_21" data-name="组 21" transform="translate(-191 -174)">
+    <g id="路径_356" data-name="路径 356" transform="translate(191 174)" fill="none">
+      <path d="M14,0l2.49,5.336L28,30H0Z" stroke="none"/>
+      <path d="M 14 2.364702224731445 L 1.570196151733398 28.99999809265137 L 26.4298038482666 28.99999809265137 L 14 2.364702224731445 M 14 -1.9073486328125e-06 L 28 29.99999809265137 L 0 29.99999809265137 L 14 -1.9073486328125e-06 Z" stroke="none" fill="#36f"/>
+    </g>
+    <text id="_" data-name="!" transform="translate(200 184.854)" fill="#36f" stroke="#36f" stroke-width="1" font-size="19" font-family="MingLiU-ExtB"><tspan x="0" y="15">!</tspan></text>
+  </g>
+</svg>

@@ -1,0 +1,47 @@
+*, *::before, *::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+  width: 100%;
+}
+
+body {
+  font-family: 'PingFang SC', 'Microsoft YaHei', 'SimHei', 'Helvetica Neue', Arial, sans-serif;
+  font-size: 14px;
+  line-height: 22px;
+  color: #333333;
+  background-color: #F5F7FA;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #D9D9D9;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #BFBFBF;
+}
+
+a {
+  color: #3366FF;
+  text-decoration: none;
+}
+
+a:hover {
+  color: #5B85FF;
+}
