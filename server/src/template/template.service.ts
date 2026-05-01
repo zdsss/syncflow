@@ -23,7 +23,7 @@ export class TemplateService {
     content: Record<string, unknown>;
     creatorId: string;
   }) {
-    return this.prisma.template.create({ data });
+    return this.prisma.template.create({ data: data as any });
   }
 
   async update(id: string, data: Record<string, unknown>) {

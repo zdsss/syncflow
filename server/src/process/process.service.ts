@@ -45,7 +45,7 @@ export class ProcessService {
         name: data.name,
         description: data.description,
         sortOrder: data.sortOrder ?? 0,
-        parameters: data.parameters,
+        parameters: data.parameters as any,
         routeId,
       },
     });

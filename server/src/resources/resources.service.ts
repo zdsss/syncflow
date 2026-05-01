@@ -36,7 +36,7 @@ export class ResourcesService {
         description: data.description,
         tags: data.tags,
         status: data.status,
-        metadata: data.metadata,
+        metadata: data.metadata as any,
       },
     });
   }

@@ -38,11 +38,13 @@ export class AuthService {
     }
 
     const hashedPassword = await bcrypt.hash(dto.password, 10);
+    const defaultDept = await this.prisma.department.findFirst({ orderBy: { sortOrder: 'asc' } });
     const user = await this.prisma.user.create({
       data: {
         name: dto.name,
         email: dto.email,
         password: hashedPassword,
+        departmentId: defaultDept?.id || 'd1',
       },
     });
 
