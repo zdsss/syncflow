@@ -22,7 +22,7 @@ function getMonthWeekColumns(startYear: number, monthCount: number) {
     let weekNum = 1;
     while (weekStart.isBefore(endOfMonth)) {
       weeksInMonth.push({
-        key: weekStart.format('YYYY-MM-DD'),
+        key: `${m.format('YYYY-MM')}-W${weekNum}`,
         label: `W${weekNum}`,
       });
       weekStart = weekStart.add(1, 'week');

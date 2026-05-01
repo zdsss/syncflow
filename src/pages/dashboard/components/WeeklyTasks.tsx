@@ -3,7 +3,10 @@ import type { Task } from '@/types';
 import { TASK_PRIORITY_CONFIG } from '@/constants';
 import { TASK_STATUS_CONFIG } from '@/constants';
 import dayjs from 'dayjs';
+import isBetween from 'dayjs/plugin/isBetween';
 import styles from './WeeklyTasks.module.css';
+
+dayjs.extend(isBetween);
 
 interface WeeklyTasksProps {
   tasks: Task[];
@@ -22,7 +25,7 @@ function getWeekDates(): { date: string; label: string }[] {
   });
 }
 
-export default function WeeklyTasks({ tasks }: WeeklyTasksProps) {
+export default function WeeklyTasks({ tasks = [] }: WeeklyTasksProps) {
   const weekDates = getWeekDates();
 
   const getTasksForDate = (date: string): Task[] => {

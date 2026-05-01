@@ -24,7 +24,7 @@ interface TaskListProps {
   loading: boolean;
 }
 
-export default function TaskList({ tasks, loading }: TaskListProps) {
+export default function TaskList({ tasks = [], loading }: TaskListProps) {
   const { filters, page, pageSize, total, setPagination, updateTask } = useTaskStore();
   const [editingProgress, setEditingProgress] = useState<string | null>(null);
   const [progressValue, setProgressValue] = useState<number>(0);

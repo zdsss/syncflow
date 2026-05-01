@@ -26,8 +26,8 @@ interface InfoPanelProps {
 }
 
 export default function InfoPanel({
-  projects,
-  tasks,
+  projects = [],
+  tasks = [],
   selectedProjectId,
   onProjectChange,
   summary,

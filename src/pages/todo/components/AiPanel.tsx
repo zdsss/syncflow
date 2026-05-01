@@ -14,7 +14,7 @@ interface AiPanelProps {
   onMetricClick: (status: TaskStatus) => void;
 }
 
-export default function AiPanel({ tasks, isWide, onToggleWidth, onClose, onMetricClick }: AiPanelProps) {
+export default function AiPanel({ tasks = [], isWide, onToggleWidth, onClose, onMetricClick }: AiPanelProps) {
   const [selectedProject, setSelectedProject] = useState<string>('default');
 
   const metrics = useMemo(() => {

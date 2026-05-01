@@ -50,7 +50,7 @@ interface FilterBarProps {
   onFilterChange?: (filteredTasks: Task[]) => void;
 }
 
-export default function FilterBar({ tasks }: FilterBarProps) {
+export default function FilterBar({ tasks = [] }: FilterBarProps) {
   const { filters, setFilters } = useTaskStore();
   const [activeFilter, setActiveFilter] = useState<string>('all');
 

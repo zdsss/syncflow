@@ -94,7 +94,7 @@ export default function TaskDetailDrawer({ task, open, onClose }: TaskDetailDraw
             <Progress
               percent={task.progress}
               strokeColor={task.progress >= 100 ? '#52C41A' : '#3366FF'}
-              trailColor="#F0F0F0"
+              railColor="#F0F0F0"
             />
           </div>
         </div>

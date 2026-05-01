@@ -196,7 +196,7 @@ export default function KanbanView({
             percent={completionRate}
             size="small"
             strokeColor="#52C41A"
-            trailColor="#F0F0F0"
+            railColor="#F0F0F0"
             style={{ width: 120, marginBottom: 0 }}
           />
         </div>
