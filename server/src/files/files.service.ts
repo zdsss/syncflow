@@ -103,4 +103,69 @@ export class FilesService {
       data: { totalFiles, usedSpace, totalSpace },
     };
   }
+
+  async uploadFile(
+    file: Express.Multer.File,
+    body: { uploaderId: string; projectId?: string; parentFolderId?: string },
+  ) {
+    const name = file.originalname;
+    const extension = name.includes('.')
+      ? '.' + name.split('.').pop()
+      : null;
+
+    const existing = await this.prisma.file.findFirst({
+      where: { name, projectId: body.projectId || null, isDeleted: false },
+      orderBy: { version: 'desc' },
+    });
+    const version = existing ? existing.version + 1 : 1;
+
+    const data = await this.prisma.file.create({
+      data: {
+        name,
+        type: this.getFileType(extension),
+        extension,
+        size: BigInt(file.size),
+        path: `/uploads/${file.filename}`,
+        uploaderId: body.uploaderId,
+        projectId: body.projectId,
+        parentFolderId: body.parentFolderId,
+        version,
+      },
+    });
+
+    return { code: 0, data };
+  }
+
+  private getFileType(extension: string | null): string {
+    if (!extension) return 'other';
+    const map: Record<string, string> = {
+      '.pdf': 'document',
+      '.doc': 'document',
+      '.docx': 'document',
+      '.xls': 'document',
+      '.xlsx': 'document',
+      '.ppt': 'document',
+      '.pptx': 'document',
+      '.txt': 'document',
+      '.png': 'image',
+      '.jpg': 'image',
+      '.jpeg': 'image',
+      '.gif': 'image',
+      '.svg': 'image',
+      '.webp': 'image',
+      '.mp4': 'video',
+      '.avi': 'video',
+      '.mov': 'video',
+      '.mp3': 'audio',
+      '.wav': 'audio',
+      '.zip': 'archive',
+      '.rar': 'archive',
+      '.7z': 'archive',
+      '.dwg': 'cad',
+      '.dxf': 'cad',
+      '.step': 'cad',
+      '.stp': 'cad',
+    };
+    return map[extension.toLowerCase()] || 'other';
+  }
 }

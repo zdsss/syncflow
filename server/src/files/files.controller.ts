@@ -7,8 +7,13 @@ import {
   Param,
   Body,
   Query,
+  UseInterceptors,
+  UploadedFile,
 } from '@nestjs/common';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { diskStorage } from 'multer';
 import { FilesService } from './files.service';
+import { extname } from 'path';
 
 @Controller('files')
 export class FilesController {
@@ -39,16 +44,44 @@ export class FilesController {
     return this.filesService.findOne(id);
   }
 
+  @Post('upload')
+  @UseInterceptors(
+    FileInterceptor('file', {
+      storage: diskStorage({
+        destination: './uploads',
+        filename: (_req, file, cb) => {
+          const uniqueSuffix =
+            Date.now() + '-' + Math.round(Math.random() * 1e9);
+          cb(null, uniqueSuffix + extname(file.originalname));
+        },
+      }),
+    }),
+  )
+  upload(
+    @UploadedFile() file: Express.Multer.File,
+    @Body()
+    body: {
+      uploaderId: string;
+      projectId?: string;
+      parentFolderId?: string;
+    },
+  ) {
+    return this.filesService.uploadFile(file, body);
+  }
+
   @Post()
-  create(@Body() body: {
-    name: string;
-    type: string;
-    extension?: string;
-    size: number;
-    path: string;
-    uploaderId: string;
-    projectId?: string;
-  }) {
+  create(
+    @Body()
+    body: {
+      name: string;
+      type: string;
+      extension?: string;
+      size: number;
+      path: string;
+      uploaderId: string;
+      projectId?: string;
+    },
+  ) {
     return this.filesService.create(body);
   }
 

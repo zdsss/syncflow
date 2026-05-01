@@ -164,3 +164,111 @@ model File {
 
   @@map("files")
 }
+
+// === Phase 3: New Module Models ===
+
+model BomItem {
+  id          String    @id @default(uuid())
+  name        String
+  partNumber  String?   @map("part_number")
+  specification String?
+  supplier    String?
+  unit        String?   @default("pcs")
+  unitPrice   Decimal?  @map("unit_price") @db.Decimal(12, 2)
+  quantity    Float     @default(1)
+  parentId    String?   @map("parent_id")
+  projectId   String    @map("project_id")
+  version     Int       @default(1)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("bom_items")
+}
+
+model ProcessRoute {
+  id          String    @id @default(uuid())
+  name        String
+  description String?
+  projectId   String    @map("project_id")
+  status      String    @default("draft")
+  version     Int       @default(1)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  steps ProcessStep[]
+
+  @@map("process_routes")
+}
+
+model ProcessStep {
+  id           String   @id @default(uuid())
+  name         String
+  description  String?
+  sortOrder    Int      @default(0) @map("sort_order")
+  routeId      String   @map("route_id")
+  parameters   Json?
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  route ProcessRoute @relation(fields: [routeId], references: [id], onDelete: Cascade)
+
+  @@map("process_steps")
+}
+
+model Resource {
+  id          String    @id @default(uuid())
+  name        String
+  type        String    // human, equipment, supplier
+  description String?
+  tags        String[]
+  status      String    @default("available")
+  metadata    Json?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("resources")
+}
+
+model Article {
+  id          String    @id @default(uuid())
+  title       String
+  content     String    @db.Text
+  category    String    @default("general")
+  tags        String[]
+  status      String    @default("draft")
+  authorId    String    @map("author_id")
+  viewCount   Int       @default(0) @map("view_count")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("articles")
+}
+
+model Template {
+  id          String    @id @default(uuid())
+  name        String
+  type        String    // project, task
+  description String?
+  content     Json
+  usageCount  Int       @default(0) @map("usage_count")
+  creatorId   String    @map("creator_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("templates")
+}
+
+model Approval {
+  id          String    @id @default(uuid())
+  type        String    // task_complete, milestone, bom_change, process_publish, resource_borrow
+  targetId    String    @map("target_id")
+  targetType  String    @map("target_type")
+  status      String    @default("pending") // pending, approved, rejected
+  applicantId String    @map("applicant_id")
+  approverId  String?   @map("approver_id")
+  comment     String?
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  @@map("approvals")
+}

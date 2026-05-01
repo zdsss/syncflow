@@ -1,9 +1,12 @@
 import { PrismaClient } from '@prisma/client';
+import * as bcrypt from 'bcrypt';
 
 const prisma = new PrismaClient();
 
 async function main() {
   console.log('Seeding database...');
+
+  const hashedPassword = await bcrypt.hash('password123', 10);
 
   // Departments
   const departments = await Promise.all([
@@ -33,7 +36,7 @@ async function main() {
   ]);
   console.log(`Created ${roles.length} roles`);
 
-  // Users
+  // Users (with hashed passwords)
   const userData = [
     { id: 'u1', name: '邓智豪', email: 'deng@syncflow.com', departmentId: 'd2' },
     { id: 'u2', name: '王美玲', email: 'wang.ml@syncflow.com', departmentId: 'd2' },
@@ -51,7 +54,9 @@ async function main() {
     { id: 'u14', name: '吴文杰', email: 'wu.wj@syncflow.com', departmentId: 'd5' },
     { id: 'u15', name: '刘婷婷', email: 'liu.tt@syncflow.com', departmentId: 'd3' },
   ];
-  const users = await Promise.all(userData.map((u) => prisma.user.create({ data: u })));
+  const users = await Promise.all(
+    userData.map((u) => prisma.user.create({ data: { ...u, password: hashedPassword } })),
+  );
   console.log(`Created ${users.length} users`);
 
   // Teams

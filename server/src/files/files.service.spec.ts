@@ -176,4 +176,98 @@ describe('FilesService', () => {
       expect(result.data.usedSpace).toBe(BigInt(5000));
     });
   });
+
+  describe('uploadFile()', () => {
+    const mockMulterFile = {
+      fieldname: 'file',
+      originalname: 'test.pdf',
+      encoding: '7bit',
+      mimetype: 'application/pdf',
+      size: 2048,
+      destination: '/tmp/uploads',
+      filename: 'abc123.pdf',
+      path: '/tmp/uploads/abc123.pdf',
+      buffer: Buffer.from(''),
+      stream: null as any,
+    } as Express.Multer.File;
+
+    it('should create file record in database with correct metadata', async () => {
+      prisma.file.findFirst.mockResolvedValue(null); // no existing file
+      prisma.file.create.mockResolvedValue({
+        id: 'f-new',
+        name: 'test.pdf',
+        type: 'document',
+        extension: '.pdf',
+        size: BigInt(2048),
+        path: '/uploads/abc123.pdf',
+        version: 1,
+        uploaderId: 'u1',
+        projectId: 'p1',
+      });
+
+      const result = await service.uploadFile(mockMulterFile, {
+        uploaderId: 'u1',
+        projectId: 'p1',
+      });
+
+      expect(result.code).toBe(0);
+      expect(result.data).toBeDefined();
+      expect(prisma.file.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({
+            name: 'test.pdf',
+            extension: '.pdf',
+            size: BigInt(2048),
+            path: '/uploads/abc123.pdf',
+            uploaderId: 'u1',
+            projectId: 'p1',
+            version: 1,
+          }),
+        }),
+      );
+    });
+
+    it('should set version to 1 for new files', async () => {
+      prisma.file.findFirst.mockResolvedValue(null);
+      prisma.file.create.mockResolvedValue({
+        id: 'f-new',
+        version: 1,
+      });
+
+      const result = await service.uploadFile(mockMulterFile, {
+        uploaderId: 'u1',
+      });
+
+      expect(result.code).toBe(0);
+      expect(prisma.file.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ version: 1 }),
+        }),
+      );
+    });
+
+    it('should increment version for same-name files in same project', async () => {
+      prisma.file.findFirst.mockResolvedValue({ version: 2 });
+      prisma.file.create.mockResolvedValue({
+        id: 'f-new',
+        version: 3,
+      });
+
+      const result = await service.uploadFile(mockMulterFile, {
+        uploaderId: 'u1',
+        projectId: 'p1',
+      });
+
+      expect(result.code).toBe(0);
+      expect(prisma.file.findFirst).toHaveBeenCalledWith({
+        where: { name: 'test.pdf', projectId: 'p1', isDeleted: false },
+        orderBy: { version: 'desc' },
+      });
+      expect(prisma.file.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ version: 3 }),
+        }),
+      );
+    });
+  });
 });
