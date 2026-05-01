@@ -12,6 +12,7 @@ model User {
   name         String
   avatar       String?
   email        String    @unique
+  password     String    @default("")
   phone        String?
   departmentId String    @map("department_id")
   status       String    @default("active")
