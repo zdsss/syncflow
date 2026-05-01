@@ -1,34 +1,22 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { Badge, Popover, List, Button, Space } from 'antd';
 import { BellOutlined, SearchOutlined, SettingOutlined, GlobalOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '@/stores/useAppStore';
 import { useAuthStore } from '@/stores/useAuthStore';
+import { useNotificationStore } from '@/stores/useNotificationStore';
+import { useSocket } from '@/hooks/useSocket';
 import { getCurrentUser, getTeams } from '@/services/auth.service';
 import GlobalSearch from '@/components/ui/GlobalSearch';
 import styles from './Header.module.css';
-
-interface Notification {
-  id: string;
-  title: string;
-  desc: string;
-  time: string;
-  read: boolean;
-  type: 'task' | 'approval' | 'system';
-}
-
-const MOCK_NOTIFICATIONS: Notification[] = [
-  { id: '1', title: '任务已分配', desc: '邓智豪 将"电池Pack外观设计"分配给你', time: '5分钟前', read: false, type: 'task' },
-  { id: '2', title: '审批待处理', desc: '"BOM清单v3"需要你的审批', time: '30分钟前', read: false, type: 'approval' },
-  { id: '3', title: '系统维护通知', desc: '系统将于今晚22:00-23:00进行维护', time: '2小时前', read: true, type: 'system' },
-];
 
 export default function Header() {
   const { locale, setLocale } = useAppStore();
   const { currentUser, currentTeam, setCurrentUser, setCurrentTeam, setTeams } = useAuthStore();
   const navigate = useNavigate();
-  const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
-  const unreadCount = notifications.filter((n) => !n.read).length;
+  const { notifications, addNotification, markAsRead, markAllAsRead } = useNotificationStore();
+  const { on } = useSocket();
+  const unreadCount = useNotificationStore((s) => s.unreadCount());
 
   useEffect(() => {
     const load = async () => {
@@ -46,12 +34,15 @@ export default function Header() {
     load();
   }, [setCurrentUser, setCurrentTeam, setTeams]);
 
+  useEffect(() => {
+    const off = on('notification:new', (data: { title: string; desc: string; type: string }) => {
+      addNotification({ title: data.title, desc: data.desc, type: data.type as any });
+    });
+    return off;
+  }, [on, addNotification]);
+
   const toggleLocale = () => {
     setLocale(locale === 'zh' ? 'en' : 'zh');
-  };
-
-  const markAllRead = () => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, read: true })));
   };
 
   const notificationPanel = (
@@ -67,9 +58,9 @@ export default function Header() {
           <List.Item
             className={`${styles.notifItem} ${!item.read ? styles.notifUnread : ''}`}
             onClick={() => {
-              setNotifications((prev) => prev.map((n) => n.id === item.id ? { ...n, read: true } : n));
+              markAsRead(item.id);
               if (item.type === 'task') navigate('/todo');
-              else if (item.type === 'approval') navigate('/config');
+              else if (item.type === 'approval') navigate('/approval');
               else navigate('/dashboard');
             }}
           >  <div>

@@ -14,6 +14,8 @@ import { ResourcesModule } from './resources/resources.module';
 import { KnowledgeModule } from './knowledge/knowledge.module';
 import { TemplateModule } from './template/template.module';
 import { PersonalModule } from './personal/personal.module';
+import { WebSocketModule } from './websocket/websocket.module';
+import { ApprovalModule } from './approval/approval.module';
 
 @Module({
   imports: [
@@ -32,6 +34,8 @@ import { PersonalModule } from './personal/personal.module';
     KnowledgeModule,
     TemplateModule,
     PersonalModule,
+    WebSocketModule,
+    ApprovalModule,
   ],
 })
 export class AppModule {}

@@ -16,6 +16,7 @@ const TemplatePage = lazy(() => import('@/pages/template'));
 const PersonalPage = lazy(() => import('@/pages/personal'));
 const QueryPage = lazy(() => import('@/pages/query'));
 const ResourcesPage = lazy(() => import('@/pages/resources'));
+const ApprovalPage = lazy(() => import('@/pages/approval'));
 
 function LazyPage({ children }: { children: React.ReactNode }) {
   return (
@@ -45,6 +46,7 @@ export const router = createBrowserRouter([
       { path: 'personal', element: <LazyPage><PersonalPage /></LazyPage> },
       { path: 'query', element: <LazyPage><QueryPage /></LazyPage> },
       { path: 'resources', element: <LazyPage><ResourcesPage /></LazyPage> },
+      { path: 'approval', element: <LazyPage><ApprovalPage /></LazyPage> },
       { path: '*', element: <Navigate to="/dashboard" replace /> },
     ],
   },

@@ -75,6 +75,9 @@ describe('AuthService', () => {
     team: {
       findMany: jest.fn().mockResolvedValue(mockTeams),
     },
+    department: {
+      findFirst: jest.fn().mockResolvedValue({ id: 'dept-1', name: 'Engineering', sortOrder: 1 }),
+    },
   };
 
   beforeEach(async () => {
@@ -147,6 +150,7 @@ describe('AuthService', () => {
           name: 'New User',
           email: 'new@example.com',
           password: '$2b$10$hashedpassword',
+          departmentId: 'dept-1',
         },
       });
       expect(result.code).toBe(0);
