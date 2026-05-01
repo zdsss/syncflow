@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from 'react';
-import { Table, Checkbox, message } from 'antd';
+import { Table, Checkbox, Pagination, message } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
 import {
   FileTextOutlined,
@@ -158,7 +158,7 @@ export default function FileListTable() {
         size="middle"
       />
       <div className={styles.paginationWrap}>
-        <Table.Pagination
+        <Pagination
           current={page}
           pageSize={pageSize}
           total={total}
