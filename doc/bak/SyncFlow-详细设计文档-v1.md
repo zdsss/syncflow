@@ -2726,3 +2726,1246 @@ File ── 自关联（树形文件夹结构）                 │
 > **审校日期**：2026-05-01
 >
 > **审校说明**：基于初稿（第1-13章）进行全面审校，补充了横切关注点设计（第14章）、设计存疑项与待确认问题（第15章）、修订建议与后续行动（第16章）。建议团队优先处理 P0 级修订项后再进入开发阶段。
+
+---
+
+# 第17章：优化与补全设计
+
+本章基于对现有代码实现的全面审查，系统性地梳理架构层、数据模型、认证安全、实时通信、国际化、业务逻辑、前端交互、数据导入导出和基础设施等九个维度的优化与补全方案。每节均标注当前状态与目标方案，为后续迭代提供可执行的设计指引。
+
+---
+
+## 17.1 架构层优化
+
+### 17.1.1 API 层增强设计
+
+当前 `api.ts` 仅有约 19 行代码，仅包含一个响应拦截器，缺乏请求拦截、Token 管理、错误标准化、重试机制等基础设施能力。
+
+| 属性 | 当前状态 | 优化方案 |
+|------|---------|---------|
+| Request Interceptor | 无 | 注入 Authorization Bearer token、request ID（UUID）、请求时间戳 |
+| Token 管理 | 无 | localStorage 存储 token，request interceptor 自动附加，401 时清除并跳转登录 |
+| 错误标准化 | 原始 error reject | 统一错误格式 `{ code, message, details }`，字段级错误映射到表单 |
+| 重试机制 | 无 | 网络超时/5xx 自动重试3次（指数退避 1s/2s/4s），4xx 不重试 |
+| 请求取消 | 无 | AbortController 集成，组件卸载时自动取消 |
+| Loading 协调 | 各页面独立管理 | 全局请求计数器，支持 loading bar |
+
+**请求拦截器实现示例**：
+
+```typescript
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  config.headers['X-Request-ID'] = crypto.randomUUID();
+  return config;
+});
+```
+
+**响应拦截器增强**：
+
+```typescript
+api.interceptors.response.use(
+  (response) => response.data,
+  async (error) => {
+    const config = error.config;
+
+    // 401 → 清除 Token，跳转登录
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+      return Promise.reject(error);
+    }
+
+    // 网络超时/5xx → 指数退避重试
+    if (
+      (!error.response || error.response.status >= 500) &&
+      (!config.__retryCount || config.__retryCount < 3)
+    ) {
+      config.__retryCount = (config.__retryCount || 0) + 1;
+      const delay = Math.pow(2, config.__retryCount - 1) * 1000;
+      await new Promise((r) => setTimeout(r, delay));
+      return api(config);
+    }
+
+    // 统一错误格式
+    return Promise.reject({
+      code: error.response?.status || -1,
+      message: error.response?.data?.message || '网络请求失败',
+      details: error.response?.data?.details || null,
+    });
+  }
+);
+```
+
+### 17.1.2 Store 层重构设计
+
+当前 8 个 Zustand store 均为同步 setter 模式，不包含异步 action。每个页面独立实现 try/catch/setLoading/setData 模式，导致大量重复代码。
+
+**优化目标**：将数据获取逻辑下沉到 store 层，页面层仅负责触发 action 和消费状态。
+
+```typescript
+// Pattern: async action in store
+interface TaskStore {
+  tasks: Task[];
+  loading: boolean;
+  error: string | null;
+  fetchTasks: (filters?: TaskFilters) => Promise<void>;
+  updateTask: (id: string, data: Partial<Task>) => Promise<void>;
+}
+```
+
+**收益分析**：
+
+| 收益 | 说明 |
+|------|------|
+| 消除重复代码 | 13+ 页面不再各自实现 loading/error 处理 |
+| 共享缓存失效 | 更新任务后相关页面自动刷新 |
+| 乐观更新 | 先更新 UI 再同步 API，提升用户体验 |
+| 统一错误处理 | store 层统一捕获错误，触发全局 Toast |
+
+**替代方案**：考虑引入 TanStack Query 管理服务端状态（缓存、失效、乐观更新），Zustand 仅管理客户端状态（侧边栏折叠、语言偏好等 UI 状态）。
+
+### 17.1.3 Service 层补全设计
+
+当前存在三个页面直接使用 `fetch()` 绕过 Service 层，以及多个 Service 方法不完整的情况。
+
+**缺失 Service**：
+
+| 页面 | 当前方式 | 需新增 Service | 需新增方法 |
+|------|---------|---------------|-----------|
+| KnowledgePage | `fetch('/api/knowledge?...')` | `knowledge.service.ts` | getArticles, getArticle, createArticle, updateArticle, deleteArticle |
+| TemplatePage | `fetch('/api/templates?...')` | `template.service.ts` | getTemplates, getTemplate, createTemplate, updateTemplate, deleteTemplate |
+| PersonalPage | `fetch('/api/personal/files?...')` + 硬编码 userId | `personal.service.ts` | getPersonalFiles, createPersonalFile, deletePersonalFile |
+
+**现有 Service 方法补全**：
+
+| Service | 现有方法 | 缺失方法 |
+|---------|---------|---------|
+| task.service | getTasks, updateTask | createTask, deleteTask, getTaskById, batchUpdateStatus |
+| project.service | getProjects | createProject, updateProject, deleteProject, getProjectById |
+| auth.service | getCurrentUser, getTeams | login, logout, refreshToken, switchTeam, updateProfile |
+| file.service | getFiles | uploadFile, deleteFile, downloadFile, renameFile, getVersions, getFileStats |
+| config.service | getDepartments, getRoles, getMembers | createRole, updateRole, deleteRole, addMember, removeMember |
+| dashboard.service | getDashboardSummary | getWarnings, getRisks, getSuggestions（替换硬编码值） |
+
+### 17.1.4 错误处理统一设计
+
+当前代码中存在 16 处裸 `console.error` 调用，无用户可见的错误 UI，用户无法感知操作失败。
+
+| 错误类型 | 当前处理 | 优化方案 |
+|----------|---------|---------|
+| 网络不可达 | console.error | 全局 Toast "网络连接失败" + 自动重试 |
+| 401 认证失效 | console.warn | 清除 Token → 跳转登录页 |
+| 403 权限不足 | 无处理 | Toast "无权限" + 隐藏操作按钮 |
+| 404 资源不存在 | 无处理 | Toast + 引导返回列表 |
+| 500 服务端错误 | console.error | Toast "系统异常" + 错误上报 |
+| 表单校验失败 | 无处理 | 字段级红色提示 + 输入框红色边框 |
+| 并发冲突 | 无处理 | Toast "数据已被他人修改，请刷新" |
+
+**实现方案**：
+
+1. 在 `api.ts` 全局错误拦截器中按状态码分类处理
+2. 封装 `useErrorHandler` Hook，提供 `handleError(error)` 方法
+3. 集成全局 Toast 组件（基于 antd message 或自定义）
+
+```typescript
+export function useErrorHandler() {
+  const handleError = (error: ApiError) => {
+    switch (error.code) {
+      case 401: /* 清除 Token, 跳转登录 */ break;
+      case 403: message.error('无操作权限'); break;
+      case 404: message.error('资源不存在'); break;
+      case 422: /* 字段级错误映射 */ break;
+      case 500: message.error('系统异常，请稍后重试'); break;
+      default:  message.error(error.message || '操作失败');
+    }
+  };
+  return { handleError };
+}
+```
+
+---
+
+## 17.2 数据模型补全
+
+### 17.2.1 新增模型设计
+
+当前 Prisma Schema 缺少 6 个关键业务模型，以下逐一定义。
+
+**AuditLog（操作审计日志）**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | String (cuid) | 主键 |
+| userId | String | 操作人 |
+| action | String | create/update/delete/export/approve |
+| entityType | String | task/project/file/bom/approval 等 |
+| entityId | String | 操作对象ID |
+| changes | Json | 字段级 diff（oldValue → newValue） |
+| ipAddress | String | 操作者IP |
+| userAgent | String | 浏览器/设备信息 |
+| createdAt | DateTime | 操作时间 |
+
+索引：`@@index([userId])`、`@@index([entityType, entityId])`、`@@index([createdAt])`
+
+**Notification（通知）**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | String (cuid) | 主键 |
+| userId | String | 接收人 |
+| type | String | task_assigned/status_changed/approval_updated/system/file_uploaded |
+| title | String | 通知标题 |
+| content | String | 通知内容 |
+| relatedType | String? | 关联实体类型 |
+| relatedId | String? | 关联实体ID |
+| isRead | Boolean | 是否已读（默认 false） |
+| createdAt | DateTime | 创建时间 |
+
+索引：`@@index([userId, isRead])`、`@@index([createdAt])`
+
+**FileVersion（文件版本历史）**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | String (cuid) | 主键 |
+| fileId | String | 所属文件（外键） |
+| version | Int | 版本号 |
+| size | Int | 文件大小 |
+| path | String | 存储路径 |
+| uploaderId | String | 上传者 |
+| comment | String? | 版本说明 |
+| createdAt | DateTime | 上传时间 |
+
+关系：`file File @relation(fields: [fileId], references: [id], onDelete: Cascade)`
+
+**Comment（评论/讨论）**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | String (cuid) | 主键 |
+| content | String | 评论内容 |
+| authorId | String | 评论人 |
+| entityType | String | task/project/file 等 |
+| entityId | String | 关联实体ID |
+| parentId | String? | 父评论ID（一级嵌套） |
+| createdAt | DateTime | 创建时间 |
+| updatedAt | DateTime | 更新时间 |
+
+索引：`@@index([entityType, entityId])`、`@@index([authorId])`
+
+**ActivityLog（活动流/动态）**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | String (cuid) | 主键 |
+| userId | String | 操作人 |
+| action | String | created/updated/completed/commented/assigned/uploaded |
+| entityType | String | task/project/file 等 |
+| entityId | String | 关联实体ID |
+| entityName | String | 实体名称（冗余，便于展示） |
+| projectId | String? | 所属项目（便于按项目筛选动态） |
+| metadata | Json? | 附加信息 |
+| createdAt | DateTime | 操作时间 |
+
+索引：`@@index([projectId, createdAt])`、`@@index([userId])`
+
+**ChangeRequest（变更请求，用于BOM变更管理）**
+
+| 字段 | 类型 | 说明 |
+|------|------|------|
+| id | String (cuid) | 主键 |
+| bomId | String | 关联BOM |
+| type | String | add/modify/delete/replace |
+| description | String | 变更描述 |
+| oldData | Json? | 变更前数据 |
+| newData | Json? | 变更后数据 |
+| status | String | draft/pending/approved/rejected/applied |
+| requesterId | String | 发起人 |
+| approverId | String? | 审批人 |
+| createdAt | DateTime | 创建时间 |
+
+### 17.2.2 现有模型优化
+
+**Prisma Enum 定义**
+
+当前所有状态/优先级/阶段字段均为 `String` 类型，无数据库级校验约束。建议统一定义为 Prisma enum：
+
+```prisma
+enum TaskStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  ON_HOLD
+  COMPLETED
+  OVERDUE
+  CANCELLED
+  PENDING_ASSIGN
+  URGENT
+}
+
+enum TaskPriority {
+  URGENT
+  HIGH
+  MEDIUM
+  LOW
+}
+
+enum ProjectPhase {
+  SURVEY
+  CONCEPT
+  PLANNING
+  DEVELOPMENT
+  TESTING
+  MASS_PRODUCTION
+}
+
+enum ProjectStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  COMPLETED
+  DELAYED
+}
+
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+  LOCKED
+}
+```
+
+**缺失索引补全**
+
+当前仅 3 个 unique 约束，以下高频查询字段需要添加索引：
+
+| 模型 | 字段 | 索引类型 | 理由 |
+|------|------|---------|------|
+| Task | projectId | 普通索引 | 按项目查任务（最高频查询） |
+| Task | assigneeId | 普通索引 | "我的任务"查询 |
+| Task | status | 普通索引 | Dashboard 统计 |
+| Task | planEnd | 普通索引 | 超期检测 |
+| Project | status | 普通索引 | 按状态筛选项目 |
+| Project | leaderId | 普通索引 | 查找用户负责的项目 |
+| Approval | status | 普通索引 | 按状态筛选审批 |
+| Approval | applicantId | 普通索引 | 我发起的审批 |
+| Approval | approverId | 普通索引 | 待我审批的 |
+| File | projectId | 普通索引 | 项目文件查询 |
+| File | isDeleted | 普通索引 | 软删除过滤 |
+| BomItem | projectId | 普通索引 | 项目BOM查询 |
+| BomItem | parentId | 普通索引 | BOM树构建 |
+
+**Cascade 规则补全**
+
+当前删除项目不会级联删除关联的文件/BOM，可能产生孤立记录：
+
+| 关系 | 当前行为 | 优化方案 |
+|------|---------|---------|
+| Project → File | 无级联（孤立记录） | onDelete: Cascade 或 SetNull |
+| Project → BomItem | 无级联 | onDelete: Cascade |
+| Department → User | 无级联 | onDelete: Restrict（防止误删有人员的部门） |
+| Department → Role | 无级联 | onDelete: Restrict |
+
+**Relation 规范化**
+
+多处使用 `String[]` 存储 ID 而非 Prisma relation，缺乏外键约束：
+
+| 字段 | 当前类型 | 问题 | 优化 |
+|------|---------|------|------|
+| Task.dependencies | String[] | 无FK约束 | 改为中间表 TaskDependency |
+| Task.participantIds | String[] | 无FK约束 | 改为中间表 TaskParticipant |
+| Team.leaderId | String | 无relation | 添加 @relation |
+| Project.leaderId | String | 无relation | 添加 @relation |
+| Approval.applicantId | String | 无relation | 添加 @relation |
+| Approval.approverId | String | 无relation | 添加 @relation |
+
+### 17.2.3 数据迁移策略
+
+| 步骤 | 操作 | 风险 |
+|------|------|------|
+| 1 | 创建新模型（AuditLog/Notification 等） | 低 — 新表不影响现有数据 |
+| 2 | 添加 enum 类型 | 中 — 需要数据迁移脚本将现有 String 值映射到 enum |
+| 3 | 添加索引 | 低 — CREATE INDEX CONCURRENTLY 不锁表 |
+| 4 | 修复 cascade 规则 | 高 — 需要先清理孤立记录 |
+| 5 | 规范化 relation（String[] → 中间表） | 高 — 需要数据迁移 + 代码重构 |
+
+建议使用 Prisma Migrate 逐步迁移，每步独立 PR，每步都可回滚。
+
+---
+
+## 17.3 认证与安全增强
+
+### 17.3.1 全局认证守卫设计
+
+当前仅 `GET /auth/me` 端点配置了 `JwtAuthGuard`，其他端点均无认证保护。
+
+**方案**：在 `main.ts` 中注册全局守卫：
+
+```typescript
+// main.ts
+app.useGlobalGuards(new JwtAuthGuard());
+```
+
+**公开端点白名单**（无需认证）：
+
+| 端点 | 说明 |
+|------|------|
+| `POST /auth/register` | 用户注册 |
+| `POST /auth/login` | 用户登录 |
+| `GET /auth/teams` | 获取团队列表（注册时使用） |
+
+**实现方式**：自定义 `@Public()` 装饰器标记公开端点，守卫检查是否有 `@Public()` 元数据，有则放行，无则校验 JWT。
+
+```typescript
+// public.decorator.ts
+export const Public = () => SetMetadata('isPublic', true);
+
+// jwt-auth.guard.ts
+@Injectable()
+export class JwtAuthGuard extends AuthGuard('jwt') {
+  canActivate(context: ExecutionContext) {
+    const isPublic = this.reflector.getAllAndOverride<boolean>('isPublic', [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) return true;
+    return super.canActivate(context);
+  }
+}
+```
+
+### 17.3.2 RBAC 权限模型设计
+
+**权限标识符规范**：
+
+| 模块 | 权限标识 | 说明 |
+|------|---------|------|
+| 项目 | project:create, project:read, project:update, project:delete | 项目CRUD |
+| 任务 | task:create, task:read, task:update, task:delete, task:assign | 任务CRUD+分配 |
+| 文件 | file:upload, file:download, file:delete, file:manage | 文件操作 |
+| BOM | bom:read, bom:create, bom:update, bom:delete, bom:approve | BOM操作 |
+| 审批 | approval:create, approval:approve, approval:reject | 审批操作 |
+| 配置 | config:read, config:manage | 系统配置 |
+| 用户 | user:read, user:manage | 用户管理 |
+
+**Guard 实现**：
+
+```typescript
+// roles.decorator.ts
+export const Roles = (...permissions: string[]) =>
+  SetMetadata('permissions', permissions);
+
+// roles.guard.ts
+@Injectable()
+export class RolesGuard implements CanActivate {
+  canActivate(context: ExecutionContext): boolean {
+    const requiredPermissions = this.reflector.get<string[]>(
+      'permissions',
+      context.getHandler(),
+    );
+    if (!requiredPermissions) return true;
+    const { user } = context.switchToHttp().getRequest();
+    return requiredPermissions.every((p) => user.permissions?.includes(p));
+  }
+}
+```
+
+**数据权限隔离**：
+
+| 级别 | 说明 | 实现 |
+|------|------|------|
+| 全局 | 管理员可见所有数据 | 无过滤 |
+| 部门 | 同部门可见 | WHERE departmentId = user.departmentId |
+| 项目 | 项目成员可见 | WHERE projectId IN user.projectIds |
+| 个人 | 仅自己可见 | WHERE assigneeId = user.id |
+
+### 17.3.3 Token 生命周期设计
+
+| Token 类型 | 有效期 | 存储位置 | 用途 |
+|-----------|--------|---------|------|
+| Access Token | 15分钟 | 内存/localStorage | API 认证 |
+| Refresh Token | 7天 | httpOnly Cookie | 刷新 Access Token |
+
+**刷新流程**：
+
+1. API 返回 401（Access Token 过期）
+2. 前端自动调用 `POST /auth/refresh`（携带 Refresh Token）
+3. 返回新 Access Token，重试原请求
+4. Refresh Token 也过期 → 跳转登录页
+
+**Token 黑名单**：Redis 存储已注销的 Token（logout 时写入），JWT 策略中检查 Token 是否在黑名单中。
+
+### 17.3.4 输入验证体系
+
+当前仅 auth 模块有 DTO 定义，其他 17 个 Controller 端点均使用 `@Body() body: any`，无输入校验。
+
+| Controller | 需要的 DTO |
+|-----------|-----------|
+| TasksController | CreateTaskDto, UpdateTaskDto, TaskQueryDto |
+| ProjectsController | CreateProjectDto, UpdateProjectDto, ProjectQueryDto |
+| BomController | CreateBomItemDto, UpdateBomItemDto |
+| FilesController | UploadFileDto, FileQueryDto |
+| ApprovalController | CreateApprovalDto |
+| ResourcesController | CreateResourceDto, UpdateResourceDto |
+| KnowledgeController | CreateArticleDto, UpdateArticleDto |
+| TemplateController | CreateTemplateDto, UpdateTemplateDto |
+| ProcessController | CreateProcessRouteDto, CreateProcessStepDto |
+| ConfigController | CreateRoleDto, AddMemberDto |
+
+每个 DTO 使用 `class-validator` 装饰器进行字段校验（如 `@IsString()`、`@IsOptional()`、`@IsEnum()`、`@Min(0)` 等），配合全局 `ValidationPipe` 自动校验。
+
+### 17.3.5 速率限制设计
+
+```typescript
+// main.ts
+import { ThrottlerModule } from '@nestjs/throttler';
+
+@Module({
+  imports: [
+    ThrottlerModule.forRoot([{
+      ttl: 60000,  // 1分钟
+      limit: 100,  // 100次请求
+    }]),
+  ],
+})
+```
+
+**特殊端点限制**：
+
+| 端点 | 限制 | 理由 |
+|------|------|------|
+| POST /auth/login | 5次/分钟 | 防暴力破解 |
+| POST /auth/register | 3次/分钟 | 防批量注册 |
+| POST /files/upload | 10次/分钟 | 防滥用存储 |
+| 其他端点 | 100次/分钟 | 通用防护 |
+
+---
+
+## 17.4 实时通信集成设计
+
+### 17.4.1 WebSocket 事件集成
+
+当前 `WebSocketService` 定义了 4 个 emit 方法但从未被业务代码调用，WebSocket 通道处于空转状态。
+
+**集成方案**：
+
+| Service | 触发点 | 调用方法 | 推送内容 |
+|---------|--------|---------|---------|
+| TasksService | create/update/delete | emitTaskStatusChanged, emitTaskAssigned | taskId, oldStatus, newStatus, operatorId |
+| ApprovalService | approve/reject | emitApprovalUpdated | approvalId, status, approverId |
+| FilesService | upload | emitNotification | 文件名, 上传人, 项目ID |
+| AuthService | 注册 | emitNotification | 欢迎通知 |
+
+**注入方式**：
+
+```typescript
+// tasks.module.ts
+@Module({
+  imports: [WebSocketModule],
+  // ...
+})
+export class TasksModule {}
+
+// tasks.service.ts
+constructor(
+  private prisma: PrismaService,
+  private wsService: WebSocketService,
+) {}
+```
+
+### 17.4.2 通知持久化设计
+
+当前 WebSocket 仅做实时推送但不存储通知，用户离线期间的通知会永久丢失。
+
+**方案**：
+
+1. 所有通知先写入 Notification 表
+2. 用户在线时通过 WebSocket 实时推送
+3. 用户上线时拉取未读通知
+4. 支持"全部标为已读"操作
+5. 通知按类型分类（任务/审批/系统/文件）
+
+**新增后端端点**：
+
+| 端点 | 方法 | 说明 |
+|------|------|------|
+| `/notifications` | GET | 获取通知列表（支持分页+已读筛选） |
+| `/notifications/:id/read` | PATCH | 标记单条已读 |
+| `/notifications/read-all` | PATCH | 全部标为已读 |
+| `/notifications/unread-count` | GET | 未读数量 |
+
+### 17.4.3 降级策略
+
+| 优先级 | 方案 | 触发条件 |
+|--------|------|---------|
+| 1 | WebSocket | 默认方案，双向实时通信 |
+| 2 | SSE (Server-Sent Events) | WebSocket 连接失败时降级 |
+| 3 | Polling (30s) | SSE 也不可用时兜底 |
+
+前端实现：在 `useSocket` hook 中添加连接失败检测和自动降级逻辑，确保在任何网络环境下都能获取数据更新。
+
+---
+
+## 17.5 国际化完整方案
+
+### 17.5.1 i18n 命名空间规划
+
+当前仅有 `common`（12 keys）和 `sidebar`（12 keys）两个命名空间，所有页面主体内容均硬编码中文。
+
+| 命名空间 | 覆盖范围 | 预估 key 数 |
+|----------|---------|------------|
+| common | 通用按钮/状态/提示 | 50+ |
+| sidebar | 导航标签 | 12 |
+| dashboard | 中控看板页面 | 40+ |
+| project | 项目管理页面 | 50+ |
+| todo | 待办事项页面 | 40+ |
+| files | 文件管理页面 | 30+ |
+| config | 配置管理页面 | 30+ |
+| approval | 审批流程页面 | 20+ |
+| bom | BOM管理页面 | 20+ |
+| process | 工艺管理页面 | 20+ |
+| query | 查询统计页面 | 20+ |
+| resources | 通用资源页面 | 20+ |
+| knowledge | 知识管理页面 | 20+ |
+| template | 模板定义页面 | 15+ |
+| personal | 个人文件夹页面 | 15+ |
+| auth | 登录/注册页面 | 20+ |
+| validation | 表单校验消息 | 20+ |
+| **合计** | | **400+ keys** |
+
+### 17.5.2 迁移策略
+
+| 步骤 | 操作 |
+|------|------|
+| 1 | 扩展 i18n 配置，注册所有命名空间 |
+| 2 | 创建各命名空间的 zh/en JSON 文件 |
+| 3 | 逐页面替换硬编码中文为 `t('namespace:key')` |
+| 4 | 修复 Sidebar 的 `locale === 'zh'` 绕过 i18n 的问题 |
+| 5 | 枚举值国际化（状态/优先级标签） |
+| 6 | 日期/数字格式化（dayjs locale 切换） |
+
+---
+
+## 17.6 业务逻辑增强
+
+### 17.6.1 Dashboard 动态计算
+
+当前 `DashboardService.getSummary()` 返回硬编码值 `warnings: 3, risks: 2, suggestions: 4`，不反映实际数据状态。
+
+| 指标 | 计算逻辑 |
+|------|---------|
+| warnings | 任务 status=OVERDUE 的数量 + 项目 status=DELAYED 的数量 |
+| risks | 任务进度 < 50% 且 planEnd < 7天后的数量 |
+| suggestions | 任务未分配(assigneeId=null)的数量 + 任务进度为0%且已过planStart的数量 |
+
+查询优化：使用 `groupBy` + `count` 替代 7 次独立 `count()` 查询，减少数据库往返次数。
+
+### 17.6.2 任务超期自动检测
+
+当前超期状态仅在 `QueryService.getOverdueTasks()` 中动态计算，`TasksService` 本身不感知超期状态。
+
+| 方案 | 说明 |
+|------|------|
+| 查询时动态标记 | findAll 时检查 `planEnd < now && status != COMPLETED` → 返回 `isOverdue: true` |
+| 定时任务 | 每日凌晨扫描超期任务 → 更新 status 为 OVERDUE → 推送通知 |
+
+建议两种方案结合使用：查询时动态标记保证实时性，定时任务兜底确保超期任务被持久化标记并触发通知。
+
+### 17.6.3 项目完成度自动汇总
+
+当前 `Project.completion` 是独立字段，不与子任务关联，需要手动维护。
+
+| 计算方式 | 说明 |
+|----------|------|
+| 简单平均 | completion = AVG(子任务 progress) |
+| 加权平均 | 按任务优先级加权（urgent=4, high=3, medium=2, low=1） |
+| 里程碑加权 | 里程碑任务权重更高 |
+
+触发时机：任务 progress/status 变更时，重新计算父项目 completion 并更新。
+
+### 17.6.4 BOM 版本管理
+
+| 功能 | 说明 |
+|------|------|
+| 版本创建 | 基于当前版本创建新版本（deep copy 所有 BomItem） |
+| 版本对比 | 两个版本间 diff（新增/删除/修改的物料），表格高亮差异 |
+| 版本回溯 | 回滚至指定版本（将当前版本标记为 archived，恢复目标版本） |
+| 版本发布锁定 | 发布后不可修改，需创建新版本 |
+
+版本号规则：`v1, v2, v3...` 自增，草稿版本标记为 `draft`。
+
+### 17.6.5 工艺参数管理
+
+| 参数类型 | 示例 | 单位 |
+|----------|------|------|
+| 温度 | 焊接温度 250°C | °C |
+| 压力 | 热压压力 5MPa | MPa |
+| 时间 | 固化时间 30min | min |
+| 速度 | 传送速度 2m/s | m/s |
+
+每个参数包含：name、targetValue、upperLimit、lowerLimit、unit、inspectionMethod。
+
+存储方式：`ProcessStep.parameters`（Json 字段）存储参数数组，支持灵活扩展。
+
+### 17.6.6 审批多级链
+
+当前仅支持单级审批（申请人 → 审批人），无法满足复杂业务场景。
+
+| 操作 | 说明 |
+|------|------|
+| 多级审批 | 审批链：申请人 → 审批人1 → 审批人2 → ... → 完成 |
+| 转办 | 将审批转交给其他人（记录转办历史） |
+| 加签 | 在当前节点后插入额外审批人 |
+| 催办 | 发送催办通知给当前审批人 |
+| 会签 | 多个审批人同时审批，全部通过才进入下一步 |
+| 或签 | 多个审批人任一通过即进入下一步 |
+
+审批链存储：新增 `ApprovalChain` 模型（approvalId, stepOrder, approverId, status, comment, actedAt），支持链式审批流程编排。
+
+### 17.6.7 模板应用引擎
+
+当前模板 CRUD 存在但 `handleTemplateClick` 为 `console.log` stub，模板无法实际应用到项目创建。
+
+**模板应用流程**：
+
+1. 用户选择模板 → 预览模板结构（阶段/任务/里程碑）
+2. 填写项目基本信息（名称/负责人/开始日期）
+3. 系统根据模板自动创建：项目阶段、默认任务（含工时/优先级/参与人）、里程碑节点
+4. 用户可在创建后自定义修改
+
+**模板内容结构**（JSON）：
+
+```json
+{
+  "phases": [
+    {
+      "name": "调查",
+      "duration": 14,
+      "tasks": [
+        { "name": "需求调研", "priority": "HIGH", "estimatedHours": 40 }
+      ]
+    }
+  ],
+  "milestones": [
+    { "name": "概念评审", "phase": "CONCEPT" }
+  ],
+  "defaultRoles": ["项目经理", "产品工程师"]
+}
+```
+
+---
+
+## 17.7 前端交互优化
+
+### 17.7.1 看板拖拽
+
+项目已安装 `@dnd-kit/core` 但未在看板视图中使用。
+
+**集成方案**：
+
+| 组件 | 功能 | 说明 |
+|------|------|------|
+| KanbanView | 6列看板 | 卡片可跨列拖拽 → 触发 `updateTask(status)` API |
+| 项目泳道图 | 按阶段列展示 | 拖拽变更任务阶段 |
+| 乐观更新 | 实时更新本地状态 | 拖拽时先更新 UI，API 同步成功后确认，失败则回滚 |
+| 拖拽动画 | `@dnd-kit/sortable` | 提供平滑排序动画 |
+
+### 17.7.2 甘特图交互
+
+| 交互 | 实现方案 |
+|------|---------|
+| 拖拽两端调整 | mousedown + mousemove 事件，计算新日期，debounce 300ms 后 API 更新 |
+| 拖拽平移 | 整条甘特条拖拽，保持持续时间不变 |
+| 悬停详情 | Tooltip 组件，显示任务名/负责人/日期/进度 |
+| 颜色编码 | 按状态着色：蓝(进行中)/黄(计划中)/绿(已完成)/红(紧急/延期)/青(辅助) |
+| 时间轴缩放 | 周/月/季 三档切换 |
+
+### 17.7.3 全局搜索后端
+
+当前 `GlobalSearch` 组件直接 import mock 数据，生产环境会崩溃。
+
+| 组件 | 方案 |
+|------|------|
+| 后端 API | `GET /search?q=keyword` → 跨模块联合查询 |
+| 搜索范围 | 项目(name/description) + 任务(name/tags) + 文件(name) + BOM(name/partNumber) + 知识(title/content/tags) + 用户(name) |
+| 结果格式 | `{ type, id, title, subtitle, status }[]` 按类型分组 |
+| 快捷键 | Ctrl/Cmd + K 全局唤起 |
+| 搜索历史 | localStorage 存储最近 10 条 |
+| 防抖 | 300ms debounce |
+
+前端改造：`GlobalSearch` 从 import mock 改为调用 `/search` API，结果缓存在 store 中避免重复请求。
+
+### 17.7.4 文件管理增强
+
+| 功能 | 当前状态 | 实现方案 |
+|------|---------|---------|
+| 上传 | "开发中..." stub | 接入后端 `/files/upload` + 进度条 |
+| 版本回滚 | 弹窗仅展示 | 新增回滚 API + 确认弹窗 |
+| 权限控制 | 无 | FilePermission 模型 + 三级权限（查看/编辑/管理） |
+| 面包屑 | 无 | parentFolderId 递归查询构建路径 |
+| 搜索 | 无 | 文件名模糊搜索 API |
+| 批量操作 | 无 | 复选框 + 批量操作栏 |
+
+### 17.7.5 消除 Hardcoded 值
+
+| 文件 | 当前硬编码 | 改为 |
+|------|-----------|------|
+| bom/index.tsx | `projectId = 'proj-1'` | 从路由参数或 project store 获取 |
+| process/index.tsx | `projectId = 'proj-1'` | 从路由参数或 project store 获取 |
+| personal/index.tsx | `userId = 'user-1'` | 从 auth store 获取当前用户 ID |
+| useSocket.ts | `http://localhost:3000` | `import.meta.env.VITE_SOCKET_URL` |
+| AiPanel.tsx | 硬编码项目列表 | 从 project store 获取 |
+| GlobalSearch.tsx | import mock 数据 | 调用搜索 API |
+
+---
+
+## 17.8 数据导入导出
+
+### 17.8.1 导入引擎
+
+| 步骤 | 说明 |
+|------|------|
+| 1. 下载模板 | 提供标准 Excel 模板下载 |
+| 2. 上传解析 | 前端使用 xlsx/SheetJS 解析，后端校验格式 |
+| 3. 数据预览 | 表格展示解析结果，异常行红色高亮 |
+| 4. 确认导入 | 逐行导入，实时进度条 |
+| 5. 结果报告 | 成功/失败/跳过数量，失败原因明细 |
+
+支持导入类型：项目（Excel/CSV）、任务（Excel/CSV）、BOM（Excel）。
+
+### 17.8.2 导出引擎
+
+| 导出类型 | 格式 | 后端方案 |
+|----------|------|---------|
+| 任务列表 | Excel/CSV | exceljs 库 |
+| 项目报告 | PDF | puppeteer 或 pdfkit |
+| 甘特图截图 | PNG | html2canvas（前端生成） |
+| BOM 导出 | Excel | exceljs |
+| 统计报表 | PDF/Excel | 图表转图片 + exceljs |
+
+---
+
+## 17.9 基础设施优化
+
+### 17.9.1 后端 package.json 补全
+
+当前 `server/package.json` 仅有 test 相关 scripts，缺乏 build、start、lint、prisma 等关键脚本。
+
+```json
+{
+  "scripts": {
+    "build": "nest build",
+    "start": "node dist/main.js",
+    "start:dev": "nest start --watch",
+    "start:debug": "nest start --debug --watch",
+    "lint": "eslint \"{src,test}/**/*.ts\"",
+    "lint:fix": "eslint \"{src,test}/**/*.ts\" --fix",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "prisma:studio": "prisma studio"
+  }
+}
+```
+
+### 17.9.2 后端 ESLint 配置
+
+当前 ESLint 仅覆盖 `src/**/*.{ts,tsx}`（前端代码），后端代码（`server/`）无 lint 规则覆盖。
+
+**方案**：在 `server/` 目录添加独立 `.eslintrc.js` 配置文件，并在 root `lint-staged` 配置中添加 `server/**/*.ts` 匹配规则。
+
+### 17.9.3 CI/CD 增强
+
+| 增强项 | 说明 |
+|--------|------|
+| E2E job | 添加 playwright test job，依赖 build |
+| Backend gating | build job 添加 backend test 依赖 |
+| Docker build | 添加 docker build 验证 step |
+| Coverage artifact | 上传 coverage report 为 CI artifact |
+| Security audit | `npm audit --audit-level=high` |
+
+### 17.9.4 E2E 测试补全
+
+| 测试场景 | 优先级 | 说明 |
+|----------|--------|------|
+| 登录流程 | P0 | 输入邮箱密码 → 登录成功 → 跳转 dashboard |
+| 创建任务 | P1 | 新建任务 → 填写表单 → 提交 → 列表可见 |
+| 任务状态变更 | P1 | 修改任务状态 → 列表刷新 |
+| 文件上传 | P1 | 选择文件 → 上传 → 列表可见 |
+| 审批流程 | P2 | 创建审批 → 通过 → 状态变更 |
+| BOM CRUD | P2 | 新增物料 → 编辑 → 删除 |
+| 13页面加载 | P0 | 当前已有，保持 |
+
+### 17.9.5 Swagger/OpenAPI
+
+```typescript
+// main.ts
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+
+const config = new DocumentBuilder()
+  .setTitle('SyncFlow API')
+  .setDescription('研发协同流程管理系统 API 文档')
+  .setVersion('1.0')
+  .addBearerAuth()
+  .build();
+
+const document = SwaggerModule.createDocument(app, config);
+SwaggerModule.setup('api/docs', app, document);
+```
+
+为每个 Controller 添加 `@ApiTags`、`@ApiOperation`、`@ApiResponse` 装饰器，实现 API 文档自动生成与在线调试。
+
+---
+
+## 本章小结
+
+本章从九个维度系统性地梳理了 SyncFlow 系统的优化与补全方案：
+
+| 维度 | 核心改进 |
+|------|---------|
+| 架构层 | API 拦截器增强、Store 重构、Service 补全、统一错误处理 |
+| 数据模型 | 新增 6 个模型、Enum 类型化、索引补全、Cascade 规则修正 |
+| 认证安全 | 全局认证守卫、RBAC 权限模型、Token 刷新机制、DTO 校验 |
+| 实时通信 | WebSocket 事件集成、通知持久化、降级策略 |
+| 国际化 | 17 个命名空间、400+ keys 规划、迁移策略 |
+| 业务逻辑 | Dashboard 动态计算、超期检测、BOM 版本管理、审批多级链 |
+| 前端交互 | 看板拖拽、甘特图交互、全局搜索后端、消除硬编码值 |
+| 数据导入导出 | Excel/PDF 导入导出引擎 |
+| 基础设施 | CI/CD 增强、ESLint 补全、E2E 测试、Swagger 文档 |
+
+建议按以下优先级逐步实施：P0（认证守卫 + 输入验证 + 错误处理）→ P1（数据模型补全 + Service 补全 + 前端硬编码消除）→ P2（实时通信集成 + 国际化 + 业务逻辑增强）→ P3（导入导出 + CI/CD 增强）。
+
+---
+
+# 第18章：系统管理模块详细设计
+
+> **设计来源**：PDF设计文档（`260503界面导出合辑.pdf`）中的系统管理相关界面设计  
+> **模块范围**：数据权限管理、菜单管理、数据字典管理、代码管理、应用授权管理、角色管理增强、登录与API密钥管理
+
+## 18.1 数据权限管理
+
+**功能描述**：管理系统中的数据权限规则，定义不同角色对不同数据的访问权限。每条权限规则包含编码（Code）、描述、类型、是否可选、状态等属性。
+
+**UI设计参考**：PDF第10页 - 数据权限管理表
+
+- 表格列：Code, 描述, 类型, 可选, 状态
+- 操作：新建, 删除, 搜索
+- 分页：默认10条/页
+
+**数据模型**：
+
+```prisma
+model DataPermission {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  description String
+  type        String   // 权限类型: field/record/function
+  optional    Boolean  @default(false)
+  status      String   @default("active") // active/inactive
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+```
+
+**API端点**：
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | /api/data-permissions | 列表（分页+筛选） |
+| GET | /api/data-permissions/:id | 详情 |
+| POST | /api/data-permissions | 创建 |
+| PATCH | /api/data-permissions/:id | 更新 |
+| DELETE | /api/data-permissions/:id | 删除 |
+
+**前端组件**：
+
+- **DataPermissionPage**：主页面（表格+操作栏）
+- **DataPermissionForm**：新建/编辑弹窗
+
+## 18.2 菜单管理
+
+**功能描述**：管理系统菜单树形结构，支持菜单的增删改查和分配。菜单采用树形结构，支持多级嵌套。
+
+**UI设计参考**：
+
+- PDF第12页 - 菜单管理列表（Code/描述/类型/可选/状态）
+- PDF第20页 - 菜单管理树形视图（仪表板/产品数据管理/工程变更管理等）
+- PDF第32页 - 新建菜单表单（Code/描述/名称/图标/链接/页面）
+
+**数据模型**：
+
+```prisma
+model MenuItem {
+  id          String      @id @default(cuid())
+  code        String      @unique
+  name        String
+  description String?
+  parentId    String?
+  parent      MenuItem?   @relation("MenuTree", fields: [parentId], references: [id])
+  children    MenuItem[]  @relation("MenuTree")
+  icon        String?
+  link        String?
+  page        String?
+  sortOrder   Int         @default(0)
+  status      String      @default("active")
+  type        String      // menu/button/link
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+}
+```
+
+**API端点**：
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | /api/menus | 菜单列表（平铺） |
+| GET | /api/menus/tree | 菜单树形结构 |
+| GET | /api/menus/:id | 菜单详情 |
+| POST | /api/menus | 创建菜单 |
+| PATCH | /api/menus/:id | 更新菜单 |
+| DELETE | /api/menus/:id | 删除菜单 |
+| POST | /api/menus/assign | 菜单分配（给角色分配菜单） |
+
+**前端组件**：
+
+- **MenuManagementPage**：主页面（列表视图+树形视图切换）
+- **MenuTree**：树形结构组件
+- **MenuForm**：新建/编辑菜单表单
+- **MenuAssignPanel**：菜单分配面板
+
+## 18.3 数据字典管理
+
+**功能描述**：管理系统数据字典，支持多语言（中文/英文等）。字典按分类组织，每个分类下有多个字典值。
+
+**UI设计参考**：
+
+- PDF第14页 - 数据字典管理（分类Tab：地区语言等）
+- PDF第34页 - 字符编码标签页
+- PDF第36页 - 字典值表格（Code/值/链接/类型/状态/语言/显示顺序）
+- PDF第38页 - 新建字典值表单
+
+**数据模型**：
+
+```prisma
+model Dictionary {
+  id          String            @id @default(cuid())
+  code        String            @unique
+  name        String
+  description String?
+  status      String            @default("active")
+  createdAt   DateTime          @default(now())
+  updatedAt   DateTime          @updatedAt
+  values      DictionaryValue[]
+}
+
+model DictionaryValue {
+  id           String     @id @default(cuid())
+  dictionaryId String
+  dictionary   Dictionary @relation(fields: [dictionaryId], references: [id])
+  code         String
+  value        String
+  link         String?
+  type         String?
+  status       String     @default("active")
+  language     String     @default("zh-CN")
+  sortOrder    Int        @default(0)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+}
+```
+
+**API端点**：
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | /api/dictionaries | 字典分类列表 |
+| POST | /api/dictionaries | 创建字典分类 |
+| PATCH | /api/dictionaries/:id | 更新字典分类 |
+| DELETE | /api/dictionaries/:id | 删除字典分类 |
+| GET | /api/dictionaries/:id/values | 字典值列表 |
+| POST | /api/dictionaries/:id/values | 创建字典值 |
+| PATCH | /api/dictionaries/:id/values/:valueId | 更新字典值 |
+| DELETE | /api/dictionaries/:id/values/:valueId | 删除字典值 |
+
+**前端组件**：
+
+- **DictionaryPage**：主页面（分类Tab+值列表）
+- **DictionaryValueTable**：字典值表格
+- **DictionaryValueForm**：新建/编辑字典值表单
+
+## 18.4 代码管理
+
+**功能描述**：管理系统中的权限代码和功能代码，用于RBAC权限标识和功能配置。
+
+**UI设计参考**：PDF第16页 - 代码管理表
+
+- 表格列：Code, 描述, 类型, 状态
+- 类型标签（不同类型用不同颜色Tag）
+- 操作：新建, 删除, 搜索
+
+**数据模型**：
+
+```prisma
+model CodeEntry {
+  id          String   @id @default(cuid())
+  code        String   @unique
+  description String
+  type        String   // permission/function/config
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+```
+
+**API端点**：
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | /api/codes | 列表（分页+类型筛选） |
+| GET | /api/codes/:id | 详情 |
+| POST | /api/codes | 创建 |
+| PATCH | /api/codes/:id | 更新 |
+| DELETE | /api/codes/:id | 删除 |
+
+**前端组件**：
+
+- **CodeManagementPage**：主页面（表格+操作栏）
+- **CodeForm**：新建/编辑弹窗
+
+## 18.5 应用授权管理
+
+**功能描述**：管理系统中的应用授权，定义应用的权限范围和访问控制。
+
+**UI设计参考**：PDF第18页 - 应用授权管理
+
+- 表格列：Key Name, 描述, 类型, 作用, 状态
+- 类型标签（不同类型用不同颜色Tag）
+- 操作：新建, 删除, 搜索
+
+**数据模型**：
+
+```prisma
+model AppAuthorization {
+  id          String   @id @default(cuid())
+  keyName     String   @unique
+  description String
+  type        String   // api/function/data
+  scope       String   // 作用范围
+  status      String   @default("active")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+```
+
+**API端点**：
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | /api/app-authorizations | 列表（分页+筛选） |
+| GET | /api/app-authorizations/:id | 详情 |
+| POST | /api/app-authorizations | 创建 |
+| PATCH | /api/app-authorizations/:id | 更新 |
+| DELETE | /api/app-authorizations/:id | 删除 |
+
+**前端组件**：
+
+- **AppAuthorizationPage**：主页面（表格+操作栏）
+- **AppAuthorizationForm**：新建/编辑弹窗
+
+## 18.6 角色管理增强
+
+**功能描述**：在现有角色管理基础上增加四维权限配置能力：功能权限、数据权限、应用权限、菜单权限。
+
+**UI设计参考**：
+
+- PDF第22页 - 角色表单（角色名称/描述/组织等基本信息）
+- PDF第24页 - 状态/功能权限/数据权限/菜单权限标签页
+- PDF第26页 - 数据权限详细配置
+- PDF第28页 - 应用权限分配
+- PDF第30页 - 菜单分配
+
+**数据模型扩展**：
+
+```prisma
+model RolePermission {
+  id         String @id @default(cuid())
+  roleId     String
+  role       Role   @relation(fields: [roleId], references: [id])
+  permType   String // function/data/app/menu
+  permCode   String
+  permValue  String? // 权限值(JSON)
+  createdAt  DateTime @default(now())
+}
+```
+
+**API端点扩展**：
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | /api/roles/:id/permissions | 获取角色四维权限 |
+| PUT | /api/roles/:id/permissions/:type | 设置角色某维权限（function/data/app/menu） |
+| GET | /api/roles/:id/menus | 获取角色菜单列表 |
+| PUT | /api/roles/:id/menus | 设置角色菜单分配 |
+
+**前端组件扩展**：
+
+- **RoleFormEnhanced**：增强角色表单（基本信息+四维权限Tab）
+- **FunctionPermissionTab**：功能权限配置Tab
+- **DataPermissionTab**：数据权限配置Tab
+- **AppPermissionTab**：应用权限配置Tab
+- **MenuPermissionTab**：菜单分配Tab
+
+## 18.7 登录与API密钥管理
+
+**功能描述**：管理系统登录记录和API密钥，支持查看登录历史和创建/管理API访问密钥。
+
+**UI设计参考**：
+
+- PDF第40页 - 登录/API密钥管理入口
+- PDF第42页 - 登录记录表格（登录时间/用户/状态/方式/成功/失败）
+
+**数据模型**：
+
+```prisma
+model LoginRecord {
+  id         String   @id @default(cuid())
+  userId     String?
+  userName   String
+  status     String   // success/failed
+  method     String   // password/api_key/sso
+  ipAddress  String?
+  userAgent  String?
+  failReason String?
+  createdAt  DateTime @default(now())
+}
+
+model ApiKey {
+  id          String    @id @default(cuid())
+  userId      String
+  name        String
+  keyHash     String    @unique
+  prefix      String    // 显示前缀(如 sk-xxxx)
+  permissions String[]  // 允许的权限范围
+  lastUsedAt  DateTime?
+  expiresAt   DateTime?
+  status      String    @default("active")
+  createdAt   DateTime  @default(now())
+}
+```
+
+**API端点**：
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| GET | /api/login-records | 登录记录列表（分页+筛选） |
+| GET | /api/api-keys | API密钥列表 |
+| POST | /api/api-keys | 创建API密钥（返回一次完整key） |
+| PATCH | /api/api-keys/:id | 更新API密钥（权限/过期时间） |
+| DELETE | /api/api-keys/:id | 撤销API密钥 |
+
+**前端组件**：
+
+- **LoginRecordsPage**：登录记录表格
+- **ApiKeyManagement**：API密钥管理页面
+- **ApiKeyCreateModal**：创建API密钥弹窗（显示完整key一次）
+
+> **文档版本**：v1.1 | **修订日期**：2026-05-02
