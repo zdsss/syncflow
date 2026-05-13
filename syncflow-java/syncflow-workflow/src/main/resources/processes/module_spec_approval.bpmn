@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:flowable="http://flowable.org/bpmn"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             targetNamespace="http://flowable.org/examples">
+
+  <process id="MODULE_SPEC_APPROVAL" name="Module Spec Approval" isExecutable="true">
+
+    <startEvent id="startEvent" flowable:initiator="applicantId" />
+
+    <userTask id="submit" name="提交规格" flowable:assignee="${applicantId}" />
+    <sequenceFlow id="flow1" sourceRef="startEvent" targetRef="submit" />
+
+    <userTask id="deptReview" name="部门审核" />
+    <sequenceFlow id="flow2" sourceRef="submit" targetRef="deptReview" />
+
+    <!-- deptReview rejection -->
+    <serviceTask id="deptRejection" name="部门审核驳回处理" flowable:delegateExpression="${specApprovalService}" />
+    <sequenceFlow id="flow2rej" sourceRef="deptReview" targetRef="deptRejection">
+      <conditionExpression xsi:type="tFormalExpression">${approved == false}</conditionExpression>
+    </sequenceFlow>
+    <endEvent id="endRejectedDept" />
+    <sequenceFlow id="flow2rejEnd" sourceRef="deptRejection" targetRef="endRejectedDept" />
+
+    <userTask id="techReview" name="技术审核" />
+    <sequenceFlow id="flow3" sourceRef="deptReview" targetRef="techReview">
+      <conditionExpression xsi:type="tFormalExpression">${approved == true}</conditionExpression>
+    </sequenceFlow>
+
+    <!-- techReview rejection -->
+    <serviceTask id="techRejection" name="技术审核驳回处理" flowable:delegateExpression="${specApprovalService}" />
+    <sequenceFlow id="flow3rej" sourceRef="techReview" targetRef="techRejection">
+      <conditionExpression xsi:type="tFormalExpression">${approved == false}</conditionExpression>
+    </sequenceFlow>
+    <endEvent id="endRejectedTech" />
+    <sequenceFlow id="flow3rejEnd" sourceRef="techRejection" targetRef="endRejectedTech" />
+
+    <serviceTask id="publishSpec" name="发布规格" flowable:delegateExpression="${specApprovalService}" />
+    <sequenceFlow id="flow4" sourceRef="techReview" targetRef="publishSpec">
+      <conditionExpression xsi:type="tFormalExpression">${approved == true}</conditionExpression>
+    </sequenceFlow>
+
+    <endEvent id="endApproved" />
+    <sequenceFlow id="flow5" sourceRef="publishSpec" targetRef="endApproved" />
+
+  </process>
+
+</definitions>

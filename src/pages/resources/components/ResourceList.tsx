@@ -1,3 +1,4 @@
+import { useState, useMemo } from 'react';
 import { Table, Input, Button, Space, Tag } from 'antd';
 import { SearchOutlined, PlusOutlined } from '@ant-design/icons';
 
@@ -18,6 +19,7 @@ interface ResourceListProps {
   onAdd: () => void;
   onEdit: (record: Resource) => void;
   onDelete: (id: string) => void;
+  onBorrow?: (record: Resource) => void;
 }
 
 const statusColors: Record<string, string> = {
@@ -41,12 +43,43 @@ export default function ResourceList({
   onAdd,
   onEdit,
   onDelete,
+  onBorrow,
 }: ResourceListProps) {
+  const [activeTagFilter, setActiveTagFilter] = useState<string | null>(null);
+
+  // Collect all unique tags from human resources
+  const skillTags = useMemo(() => {
+    const humanTags = resources
+      .filter((r) => r.type === 'human')
+      .flatMap((r) => r.tags || []);
+    return [...new Set(humanTags)];
+  }, [resources]);
+
+  // Filter resources by selected tag
+  const filteredResources = useMemo(() => {
+    if (!activeTagFilter) return resources;
+    return resources.filter((r) => r.tags?.includes(activeTagFilter));
+  }, [resources, activeTagFilter]);
+
   const columns = [
     {
       title: '名称',
       dataIndex: 'name',
       key: 'name',
+      render: (name: string, record: Resource) => (
+        <div>
+          <div>{name}</div>
+          {record.type === 'human' && record.tags?.length > 0 && (
+            <div data-testid={`skill-tags-${record.id}`} style={{ marginTop: 4 }}>
+              {record.tags.map((tag) => (
+                <Tag key={tag} color="blue" style={{ fontSize: 11 }}>
+                  {tag}
+                </Tag>
+              ))}
+            </div>
+          )}
+        </div>
+      ),
     },
     {
       title: '描述',
@@ -87,6 +120,11 @@ export default function ResourceList({
       key: 'action',
       render: (_: any, record: Resource) => (
         <Space>
+          {onBorrow && record.status === 'available' && (
+            <Button type="link" onClick={() => onBorrow(record)}>
+              借用
+            </Button>
+          )}
           <Button type="link" onClick={() => onEdit(record)}>
             编辑
           </Button>
@@ -111,9 +149,32 @@ export default function ResourceList({
           添加资源
         </Button>
       </div>
+      {skillTags.length > 0 && (
+        <div data-testid="skill-tag-filter" style={{ marginBottom: 12 }}>
+          <span style={{ marginRight: 8, color: '#666', fontSize: 13 }}>技能标签:</span>
+          <Tag
+            color={activeTagFilter === null ? 'blue' : 'default'}
+            style={{ cursor: 'pointer' }}
+            onClick={() => setActiveTagFilter(null)}
+          >
+            全部
+          </Tag>
+          {skillTags.map((tag) => (
+            <Tag
+              key={tag}
+              color={activeTagFilter === tag ? 'blue' : 'default'}
+              style={{ cursor: 'pointer' }}
+              onClick={() => setActiveTagFilter(activeTagFilter === tag ? null : tag)}
+              data-testid={`skill-filter-${tag}`}
+            >
+              {tag}
+            </Tag>
+          ))}
+        </div>
+      )}
       <Table
         columns={columns}
-        dataSource={resources}
+        dataSource={filteredResources}
         loading={loading}
         rowKey="id"
       />

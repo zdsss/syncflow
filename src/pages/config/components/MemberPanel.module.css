@@ -26,7 +26,7 @@
 }
 
 :global(.ant-table-tbody) > tr:hover > td {
-  background: #F0F5FF !important;
+  background: var(--color-bg-active, #F0F5FF) !important;
 }
 
 :global(.ant-table-tbody) > tr:nth-child(even) > td {
@@ -34,7 +34,7 @@
 }
 
 :global(.ant-table-tbody) > tr:nth-child(even):hover > td {
-  background: #F0F5FF !important;
+  background: var(--color-bg-active, #F0F5FF) !important;
 }
 
 .modalSearch {

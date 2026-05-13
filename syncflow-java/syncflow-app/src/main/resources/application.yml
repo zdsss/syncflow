@@ -1,0 +1,79 @@
+server:
+  port: 8088
+
+spring:
+  application:
+    name: syncflow
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/syncflow
+    username: syncflow
+    password: syncflow123
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      minimum-idle: 5
+      maximum-pool-size: 20
+      idle-timeout: 300000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      password:
+      database: 0
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deletedAt
+      logic-delete-value: "NOW()"
+      logic-not-delete-value: "NULL"
+  type-aliases-package: com.syncflow.**.entity
+
+jwt:
+  secret: ${JWT_SECRET:your-secret-key-change-in-production-should-be-at-least-256-bits}
+  expiration: ${JWT_EXPIRATION:900000}      # 15 minutes
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}  # 7 days
+
+minio:
+  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+  bucket: ${MINIO_BUCKET:syncflow}
+
+flowable:
+  async-executor-enabled: false
+  job-executor-enabled: false
+  idm:
+    enabled: false
+  database-schema-update: true
+  check-process-definitions: true
+  process-definition-location-prefix: classpath*:/processes/
+  history-level: audit
+  process:
+    definition-cache-limit: -1
+  event-logging-enabled: true
+

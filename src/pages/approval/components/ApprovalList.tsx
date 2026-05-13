@@ -1,75 +1,71 @@
-import { Table, Tag, Tabs } from 'antd';
+import { Table, Tag, Tabs, Button, Space } from 'antd';
 import type { ColumnsType } from 'antd/es/table';
-
-interface Approval {
-  id: string;
-  type: string;
-  targetId: string;
-  targetType: string;
-  status: string;
-  applicantId: string;
-  approverId?: string;
-  comment?: string;
-  createdAt: string;
-}
+import type { ApprovalTaskVO } from '@/services/workflow.service';
 
 interface ApprovalListProps {
-  approvals: Approval[];
+  approvals: ApprovalTaskVO[];
   selectedId: string | null;
-  onSelect: (id: string) => void;
+  onSelect: (taskId: string) => void;
   loading: boolean;
   activeTab: string;
   onTabChange: (tab: string) => void;
+  onRemind?: (taskId: string) => void;
+  onAddSigner?: (taskId: string) => void;
 }
 
 const statusColors: Record<string, string> = {
-  pending: 'orange',
-  approved: 'green',
-  rejected: 'red',
+  TASK: 'blue',
+  BOM: 'cyan',
+  PROCESS: 'purple',
+  FILE: 'geekblue',
+  STAGE_GATE: 'orange',
+  MILESTONE: 'green',
 };
 
-const statusLabels: Record<string, string> = {
-  pending: '待审批',
-  approved: '已通过',
-  rejected: '已拒绝',
+const objectTypeLabels: Record<string, string> = {
+  TASK: '任务',
+  BOM: 'BOM',
+  BOM_CHANGE: 'BOM变更',
+  PROCESS_ROUTE: '工艺路线',
+  PROCESS_CHANGE: '工艺变更',
+  FILE: '文件',
+  STAGE_GATE: '阶段门',
+  MILESTONE: '里程碑',
+  MODULE_SPEC: '模块规格',
+  SPEC_CHANGE: '规格变更',
+  PROJECT: '项目',
+  ISSUE: '问题',
+  RISK: '风险',
 };
 
-const typeLabels: Record<string, string> = {
-  task_complete: '任务完成',
-  milestone: '里程碑',
-  bom_change: 'BOM变更',
-  process_publish: '工艺发布',
-  resource_borrow: '资源借用',
-};
-
-const columns: ColumnsType<Approval> = [
+const getColumns = (
+  onRemind?: (taskId: string) => void,
+  onAddSigner?: (taskId: string) => void,
+): ColumnsType<ApprovalTaskVO> => [
   {
     title: '类型',
-    dataIndex: 'type',
-    key: 'type',
+    dataIndex: 'objectType',
+    key: 'objectType',
     width: 120,
-    render: (type: string) => typeLabels[type] || type,
+    render: (type: string) => objectTypeLabels[type] || type,
   },
   {
-    title: '目标ID',
-    dataIndex: 'targetId',
-    key: 'targetId',
+    title: '名称',
+    dataIndex: 'objectName',
+    key: 'objectName',
     ellipsis: true,
   },
   {
     title: '申请人',
-    dataIndex: 'applicantId',
-    key: 'applicantId',
+    dataIndex: 'applicantName',
+    key: 'applicantName',
     width: 120,
   },
   {
-    title: '状态',
-    dataIndex: 'status',
-    key: 'status',
-    width: 100,
-    render: (status: string) => (
-      <Tag color={statusColors[status]}>{statusLabels[status] || status}</Tag>
-    ),
+    title: '节点',
+    dataIndex: 'taskName',
+    key: 'taskName',
+    width: 140,
   },
   {
     title: '创建时间',
@@ -77,6 +73,39 @@ const columns: ColumnsType<Approval> = [
     key: 'createdAt',
     width: 180,
     render: (date: string) => new Date(date).toLocaleString('zh-CN'),
+  },
+  {
+    title: '操作',
+    key: 'action',
+    width: 160,
+    render: (_: unknown, record: ApprovalTaskVO) => (
+      <Space size="small">
+        {onRemind && (
+          <Button
+            type="link"
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemind(record.taskId);
+            }}
+          >
+            催办
+          </Button>
+        )}
+        {onAddSigner && (
+          <Button
+            type="link"
+            size="small"
+            onClick={(e) => {
+              e.stopPropagation();
+              onAddSigner(record.taskId);
+            }}
+          >
+            加签
+          </Button>
+        )}
+      </Space>
+    ),
   },
 ];
 
@@ -87,7 +116,11 @@ export default function ApprovalList({
   loading,
   activeTab,
   onTabChange,
+  onRemind,
+  onAddSigner,
 }: ApprovalListProps) {
+  const columns = getColumns(onRemind, onAddSigner);
+
   return (
     <div>
       <Tabs
@@ -95,8 +128,6 @@ export default function ApprovalList({
         onChange={onTabChange}
         items={[
           { key: 'pending', label: '待审批' },
-          { key: 'approved', label: '已通过' },
-          { key: 'rejected', label: '已拒绝' },
           { key: 'all', label: '全部' },
         ]}
         size="small"
@@ -104,17 +135,20 @@ export default function ApprovalList({
       <Table
         columns={columns}
         dataSource={approvals}
-        rowKey="id"
+        rowKey="taskId"
         loading={loading}
         size="small"
         pagination={{ pageSize: 10 }}
+        scroll={{ x: 'max-content' }}
+        locale={{ emptyText: activeTab === 'pending' ? '暂无待审批事项' : '暂无审批记录' }}
         onRow={(record) => ({
-          onClick: () => onSelect(record.id),
+          onClick: () => onSelect(record.taskId),
+          'aria-selected': record.taskId === selectedId,
           style: {
             cursor: 'pointer',
-            background: record.id === selectedId ? '#EBF0FF' : undefined,
+            background: record.taskId === selectedId ? '#EBF0FF' : undefined,
           },
-        })}
+        } as any)}
       />
     </div>
   );

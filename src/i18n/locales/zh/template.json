@@ -1,0 +1,17 @@
+{
+  "title": "模板定义",
+  "projectTemplates": "项目模板",
+  "taskTemplates": "任务模板",
+  "create": "新建模板",
+  "edit": "编辑",
+  "delete": "删除",
+  "apply": "应用模板",
+  "preview": "预览",
+  "duplicate": "复制",
+  "export": "导出",
+  "import": "导入",
+  "name": "名称",
+  "type": "类型",
+  "description": "描述",
+  "usageCount": "使用次数"
+}

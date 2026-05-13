@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:flowable="http://flowable.org/bpmn"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             targetNamespace="http://flowable.org/examples">
+
+  <process id="GENERIC_APPROVAL" name="Generic Approval" isExecutable="true">
+
+    <startEvent id="startEvent" flowable:initiator="applicantId" />
+
+    <userTask id="approval" name="审批" />
+    <sequenceFlow id="flow1" sourceRef="startEvent" targetRef="approval" />
+
+    <!-- Approved path -->
+    <serviceTask id="handleApproved" name="审批通过处理"
+                 flowable:expression="${approvalCallbackService.onApproved(execution)}" />
+    <sequenceFlow id="flow2" sourceRef="approval" targetRef="handleApproved">
+      <conditionExpression xsi:type="tFormalExpression">${approved == true}</conditionExpression>
+    </sequenceFlow>
+
+    <endEvent id="endApproved" />
+    <sequenceFlow id="flow3" sourceRef="handleApproved" targetRef="endApproved" />
+
+    <!-- Rejected path -->
+    <serviceTask id="handleRejected" name="审批驳回处理"
+                 flowable:expression="${approvalCallbackService.onRejected(execution)}" />
+    <sequenceFlow id="flow4" sourceRef="approval" targetRef="handleRejected">
+      <conditionExpression xsi:type="tFormalExpression">${approved == false}</conditionExpression>
+    </sequenceFlow>
+
+    <endEvent id="endRejected" />
+    <sequenceFlow id="flow5" sourceRef="handleRejected" targetRef="endRejected" />
+
+  </process>
+
+</definitions>

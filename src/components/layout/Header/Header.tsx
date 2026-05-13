@@ -1,78 +1,79 @@
-import { useEffect } from 'react';
-import { Badge, Popover, List, Button, Space } from 'antd';
+import { useEffect, useState, useRef, useCallback } from 'react';
+import { Badge, Space, message } from 'antd';
 import { BellOutlined, SearchOutlined, SettingOutlined, GlobalOutlined } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import { useAppStore } from '@/stores/useAppStore';
 import { useAuthStore } from '@/stores/useAuthStore';
 import { useNotificationStore } from '@/stores/useNotificationStore';
+import type { User, Team } from '@/types';
 import { useSocket } from '@/hooks/useSocket';
 import { getCurrentUser, getTeams } from '@/services/auth.service';
 import GlobalSearch from '@/components/ui/GlobalSearch';
+import NotificationPanel from '@/components/ui/NotificationPanel';
 import styles from './Header.module.css';
+
+function maskPhone(phone: string): string {
+  if (phone.length < 7) return phone;
+  return phone.slice(0, 3) + '***' + phone.slice(-3);
+}
 
 export default function Header() {
   const { locale, setLocale } = useAppStore();
   const { currentUser, currentTeam, setCurrentUser, setCurrentTeam, setTeams } = useAuthStore();
   const navigate = useNavigate();
-  const { notifications, addNotification, markAsRead, markAllAsRead } = useNotificationStore();
-  const { on } = useSocket();
-  const unreadCount = useNotificationStore((s) => s.unreadCount());
+  const { addNotification, fetchNotificationsAsync, fetchUnreadCountAsync } = useNotificationStore();
+  const { subscribe, unsubscribe } = useSocket();
+  const unreadCount = useNotificationStore((s) => s.unreadCount);
+  const [panelOpen, setPanelOpen] = useState(false);
+  const bellRef = useRef<HTMLDivElement>(null);
+
+  const closePanel = useCallback(() => setPanelOpen(false), []);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (bellRef.current && !bellRef.current.contains(e.target as Node)) {
+        setPanelOpen(false);
+      }
+    };
+    if (panelOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [panelOpen]);
 
   useEffect(() => {
     const load = async () => {
       try {
         const [authRes, teamsRes] = await Promise.all([getCurrentUser(), getTeams()]);
-        if (authRes?.data) {
-          setCurrentUser((authRes as any).data.user);
-          setCurrentTeam((authRes as any).data.team);
+        const authData = authRes?.data as { user?: User; team?: Team } | undefined;
+        if (authData?.user) {
+          setCurrentUser(authData.user);
+          setCurrentTeam(authData.team ?? null);
         }
-        if (teamsRes?.data) setTeams((teamsRes as any).data);
+        if (teamsRes?.data) setTeams(Array.isArray(teamsRes.data) ? teamsRes.data : []);
       } catch (e) {
-        console.warn('Auth load failed:', e);
+        message.error('加载用户信息失败');
       }
     };
     load();
   }, [setCurrentUser, setCurrentTeam, setTeams]);
 
   useEffect(() => {
-    const off = on('notification:new', (data: { title: string; desc: string; type: string }) => {
-      addNotification({ title: data.title, desc: data.desc, type: data.type as any });
+    const destination = '/topic/notifications';
+    subscribe(destination, (data: { title: string; desc: string; type: string }) => {
+      addNotification({ title: data.title, desc: data.desc, type: (data.type || 'system') as 'task' | 'approval' | 'system' });
     });
-    return off;
-  }, [on, addNotification]);
+    return () => unsubscribe(destination);
+  }, [subscribe, unsubscribe, addNotification]);
+
+  useEffect(() => {
+    fetchNotificationsAsync().catch(() => {});
+    fetchUnreadCountAsync().catch(() => {});
+  }, [fetchNotificationsAsync, fetchUnreadCountAsync]);
 
   const toggleLocale = () => {
     setLocale(locale === 'zh' ? 'en' : 'zh');
   };
-
-  const notificationPanel = (
-    <div className={styles.notifPanel}>
-      <div className={styles.notifHeader}>
-        <span>通知 ({unreadCount})</span>
-        <Button type="link" size="small" onClick={markAllRead}>全部已读</Button>
-      </div>
-      <List
-        size="small"
-        dataSource={notifications}
-        renderItem={(item) => (
-          <List.Item
-            className={`${styles.notifItem} ${!item.read ? styles.notifUnread : ''}`}
-            onClick={() => {
-              markAsRead(item.id);
-              if (item.type === 'task') navigate('/todo');
-              else if (item.type === 'approval') navigate('/approval');
-              else navigate('/dashboard');
-            }}
-          >  <div>
-              <div className={styles.notifTitle}>{item.title}</div>
-              <div className={styles.notifDesc}>{item.desc}</div>
-              <div className={styles.notifTime}>{item.time}</div>
-            </div>
-          </List.Item>
-        )}
-      />
-    </div>
-  );
 
   return (
     <>
@@ -91,11 +92,20 @@ export default function Header() {
       </div>
       <div className={styles.rightSection}>
         <Space size={20}>
-          <Popover content={notificationPanel} trigger="click" placement="bottomRight" arrow={false}>
+          {currentUser && (
+            <div className={styles.userIdentity} onClick={() => navigate('/settings')} data-testid="user-identity">
+              <span className={styles.userRealName}>{currentUser.realName || currentUser.name}</span>
+              {currentUser.phone && (
+                <span className={styles.userPhone}>{maskPhone(currentUser.phone)}</span>
+              )}
+            </div>
+          )}
+          <div ref={bellRef} style={{ position: 'relative' }}>
             <Badge count={unreadCount} size="small">
-              <BellOutlined className={styles.iconBtn} />
+              <BellOutlined className={styles.iconBtn} onClick={() => setPanelOpen((v) => !v)} />
             </Badge>
-          </Popover>
+            <NotificationPanel open={panelOpen} onClose={closePanel} />
+          </div>
           <span className={styles.langBtn} onClick={toggleLocale}>
             <GlobalOutlined style={{ marginRight: 4 }} />
             {locale === 'zh' ? '中/EN' : 'EN/中'}

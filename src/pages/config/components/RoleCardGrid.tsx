@@ -1,48 +1,72 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useCallback } from 'react';
 import { Tabs } from 'antd';
 import { useConfigStore } from '@/stores/useConfigStore';
-import { getRoles } from '@/services/config.service';
-import { mockUsers } from '@/mocks/data/users';
+import { getRoles, getMembers } from '@/services/config.service';
+import { useAsyncData } from '@/hooks/useAsyncData';
+import type { User } from '@/types';
 import styles from './RoleCardGrid.module.css';
 
 const COLORS = ['#3366FF', '#52C41A', '#FAAD14', '#FF4D4F', '#722ED1', '#13C2C2', '#EB2F96', '#FA8C16'];
-
-const tabItems = [
-  { key: 'd1', label: '公司管理层' },
-  { key: 'd2', label: '设计部' },
-  { key: 'd3', label: '产品部' },
-  { key: 'd4', label: '研发部' },
-  { key: 'd5', label: '测试部' },
-];
 
 export default function RoleCardGrid() {
   const { departments, roles, selectedDepartmentId, selectDepartment, setRoles } = useConfigStore();
 
   const currentDeptId = selectedDepartmentId || departments[0]?.id || 'd1';
 
+  const tabItems = useMemo(() => {
+    return departments.map((dept) => ({
+      key: dept.id,
+      label: dept.name,
+    }));
+  }, [departments]);
+
+  const rolesFetcher = useCallback(
+    async () => {
+      const res = await getRoles(currentDeptId);
+      setRoles(res.data);
+      return res.data;
+    },
+    [currentDeptId, setRoles],
+  );
+  const { data: fetchedRoles, refresh: refreshRoles } = useAsyncData(rolesFetcher, '加载角色列表失败');
+
+  useEffect(() => { refreshRoles(); }, [refreshRoles]);
+
+  const membersFetcher = useCallback(
+    async () => {
+      if (!roles.length) return {};
+      const results: Record<string, User[]> = {};
+      await Promise.all(
+        roles.map(async (role) => {
+          try {
+            const res = await getMembers(role.id);
+            results[role.id] = res.data;
+          } catch {
+            results[role.id] = [];
+          }
+        }),
+      );
+      return results;
+    },
+    [roles],
+  );
+  const { data: membersByRole, refresh: refreshMembers } = useAsyncData<Record<string, User[]>>(membersFetcher, '加载成员列表失败');
+
   useEffect(() => {
-    const fetchRoles = async () => {
-      try {
-        const res = await getRoles(currentDeptId);
-        setRoles(res.data);
-      } catch {
-        // silent
-      }
-    };
-    fetchRoles();
-  }, [currentDeptId, setRoles]);
+    if (roles.length > 0) refreshMembers();
+  }, [roles, refreshMembers]);
 
   const handleTabChange = (deptId: string) => {
     selectDepartment(deptId);
   };
 
-  // Get members for each role from mock data
+  // Build role cards with members from API data
   const roleCards = useMemo(() => {
     return roles.map((role) => {
-      const members = mockUsers.filter((u) => u.roleIds.includes(role.id));
+      const members = (membersByRole ?? {})[role.id] || [];
       return { ...role, members };
     });
-  }, [roles]);
+  }, [roles, membersByRole]);
 
   return (
     <div>

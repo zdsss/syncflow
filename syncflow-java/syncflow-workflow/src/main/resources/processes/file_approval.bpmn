@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:flowable="http://flowable.org/bpmn"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             targetNamespace="http://flowable.org/examples">
+
+  <process id="FILE_APPROVAL" name="File Approval" isExecutable="true">
+
+    <startEvent id="startEvent" flowable:initiator="applicantId" />
+
+    <userTask id="submit" name="提交文件审批" flowable:assignee="${applicantId}" />
+    <sequenceFlow id="flow1" sourceRef="startEvent" targetRef="submit" />
+
+    <userTask id="review" name="文件审核" />
+    <sequenceFlow id="flow2" sourceRef="submit" targetRef="review" />
+
+    <!-- review rejection -->
+    <serviceTask id="handleRejection" name="文件审核驳回处理" flowable:delegateExpression="${fileApprovalService}" />
+    <sequenceFlow id="flow2rej" sourceRef="review" targetRef="handleRejection">
+      <conditionExpression xsi:type="tFormalExpression">${approved == false}</conditionExpression>
+    </sequenceFlow>
+    <endEvent id="endRejected" />
+    <sequenceFlow id="flow2rejEnd" sourceRef="handleRejection" targetRef="endRejected" />
+
+    <serviceTask id="publishFile" name="发布文件" flowable:delegateExpression="${fileApprovalService}" />
+    <sequenceFlow id="flow3" sourceRef="review" targetRef="publishFile">
+      <conditionExpression xsi:type="tFormalExpression">${approved == true}</conditionExpression>
+    </sequenceFlow>
+
+    <endEvent id="endApproved" />
+    <sequenceFlow id="flow4" sourceRef="publishFile" targetRef="endApproved" />
+
+  </process>
+
+</definitions>

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:flowable="http://flowable.org/bpmn"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             targetNamespace="http://flowable.org/examples">
+
+  <process id="PROCESS_APPROVAL" name="Process Approval" isExecutable="true">
+
+    <startEvent id="startEvent" flowable:initiator="applicantId" />
+
+    <userTask id="submit" name="提交工艺路线" flowable:assignee="${applicantId}" />
+    <sequenceFlow id="flow1" sourceRef="startEvent" targetRef="submit" />
+
+    <userTask id="techReview" name="技术审核" />
+    <sequenceFlow id="flow2" sourceRef="submit" targetRef="techReview" />
+
+    <!-- techReview rejection -->
+    <serviceTask id="techRejection" name="技术审核驳回处理" flowable:expression="${processApprovalService.handleRejection(execution)}" />
+    <sequenceFlow id="flow2rej" sourceRef="techReview" targetRef="techRejection">
+      <conditionExpression xsi:type="tFormalExpression">${approved == false}</conditionExpression>
+    </sequenceFlow>
+    <endEvent id="endRejectedTech" />
+    <sequenceFlow id="flow2rejEnd" sourceRef="techRejection" targetRef="endRejectedTech" />
+
+    <userTask id="processReview" name="工艺审核" />
+    <sequenceFlow id="flow3" sourceRef="techReview" targetRef="processReview">
+      <conditionExpression xsi:type="tFormalExpression">${approved == true}</conditionExpression>
+    </sequenceFlow>
+
+    <!-- processReview rejection -->
+    <serviceTask id="processRejection" name="工艺审核驳回处理" flowable:expression="${processApprovalService.handleRejection(execution)}" />
+    <sequenceFlow id="flow3rej" sourceRef="processReview" targetRef="processRejection">
+      <conditionExpression xsi:type="tFormalExpression">${approved == false}</conditionExpression>
+    </sequenceFlow>
+    <endEvent id="endRejectedProcess" />
+    <sequenceFlow id="flow3rejEnd" sourceRef="processRejection" targetRef="endRejectedProcess" />
+
+    <serviceTask id="publishProcess" name="发布工艺路线" flowable:expression="${processApprovalService.publishProcess(execution)}" />
+    <sequenceFlow id="flow4" sourceRef="processReview" targetRef="publishProcess">
+      <conditionExpression xsi:type="tFormalExpression">${approved == true}</conditionExpression>
+    </sequenceFlow>
+
+    <endEvent id="endApproved" />
+    <sequenceFlow id="flow5" sourceRef="publishProcess" targetRef="endApproved" />
+
+  </process>
+
+</definitions>

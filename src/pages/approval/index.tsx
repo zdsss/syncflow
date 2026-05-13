@@ -1,45 +1,60 @@
-import { useEffect, useState, useCallback } from 'react';
-import { getApprovals } from '@/services/approval.service';
+import { useState, useEffect, useCallback } from 'react';
+import { message } from 'antd';
+import { useWorkflowStore } from '@/stores/useWorkflowStore';
+import { useSocket } from '@/hooks/useSocket';
+import { remindApproval } from '@/services/workflow.service';
 import ApprovalList from './components/ApprovalList';
 import ApprovalDetail from './components/ApprovalDetail';
+import AddSignerModal from './components/AddSignerModal';
 import styles from './ApprovalPage.module.css';
 
-interface Approval {
-  id: string;
-  type: string;
-  targetId: string;
-  targetType: string;
-  status: string;
-  applicantId: string;
-  approverId?: string;
-  comment?: string;
-  createdAt: string;
-}
-
 export default function ApprovalPage() {
-  const [approvals, setApprovals] = useState<Approval[]>([]);
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState('pending');
+  const [addSignerOpen, setAddSignerOpen] = useState(false);
 
-  const fetchData = useCallback(async () => {
-    setLoading(true);
-    try {
-      const params = activeTab !== 'all' ? { status: activeTab } : undefined;
-      const res = await getApprovals(params);
-      setApprovals((res as any).data || []);
-    } catch {
-      // handled silently
-    } finally {
-      setLoading(false);
-    }
-  }, [activeTab]);
+  const { pendingTasks: approvals, completedTasks, loading, fetchPendingTasks, fetchCompletedTasks } = useWorkflowStore();
+  const { connected, subscribe } = useSocket();
 
   useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+    fetchPendingTasks();
+  }, [fetchPendingTasks]);
 
-  const selectedApproval = approvals.find((a) => a.id === selectedId) || null;
+  useEffect(() => {
+    if (activeTab === 'all') {
+      fetchCompletedTasks();
+    }
+  }, [activeTab, fetchCompletedTasks]);
+
+  useEffect(() => {
+    if (!connected) return;
+    const unsub = subscribe('/topic/approvals', () => {
+      fetchPendingTasks();
+    });
+    return unsub;
+  }, [connected, subscribe, fetchPendingTasks]);
+
+  const selectedTask = approvals.find((t) => t.taskId === selectedTaskId)
+    || completedTasks.find((t) => t.taskId === selectedTaskId)
+    || null;
+
+  const handleRemind = useCallback(async (taskId: string) => {
+    const task = approvals.find((t) => t.taskId === taskId);
+    if (!task?.businessObjectId) {
+      message.warning('无法催办：缺少审批信息');
+      return;
+    }
+    try {
+      await remindApproval(task.businessObjectId);
+      message.success('催办通知已发送');
+    } catch {
+      message.error('催办失败，请稍后重试');
+    }
+  }, [approvals]);
+
+  const handleAddSigner = () => {
+    setAddSignerOpen(true);
+  };
 
   return (
     <div className={styles.approvalPage}>
@@ -48,23 +63,36 @@ export default function ApprovalPage() {
       </div>
 
       <div className={styles.mainContent}>
-        <div className={styles.listPanel}>
+        <div className={styles.listPanel} role="region" aria-label="审批列表">
           <h3 className={styles.panelTitle}>审批列表</h3>
           <ApprovalList
-            approvals={approvals}
-            selectedId={selectedId}
-            onSelect={setSelectedId}
+            approvals={activeTab === 'pending' ? approvals : [...approvals, ...completedTasks]}
+            selectedId={selectedTaskId}
+            onSelect={setSelectedTaskId}
             loading={loading}
             activeTab={activeTab}
             onTabChange={setActiveTab}
+            onRemind={handleRemind}
+            onAddSigner={handleAddSigner}
           />
         </div>
 
-        <div className={styles.detailPanel}>
+        <div className={styles.detailPanel} role="region" aria-label="审批详情">
           <h3 className={styles.panelTitle}>审批详情</h3>
-          <ApprovalDetail approval={selectedApproval} onRefresh={fetchData} />
+          <ApprovalDetail task={selectedTask} onRefresh={fetchPendingTasks} />
         </div>
       </div>
+
+      <AddSignerModal
+        open={addSignerOpen}
+        businessObjectId={selectedTask?.businessObjectId ?? 0}
+        taskId={selectedTask?.taskId}
+        onClose={() => setAddSignerOpen(false)}
+        onSuccess={() => {
+          setAddSignerOpen(false);
+          fetchPendingTasks();
+        }}
+      />
     </div>
   );
 }

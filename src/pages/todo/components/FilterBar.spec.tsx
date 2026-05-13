@@ -1,94 +1,118 @@
-import { render, screen, within } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ConfigProvider } from 'antd';
 import FilterBar from './FilterBar';
-import type { Task } from '@/types';
-import { TaskStatus, TaskPriority } from '@/types';
 
-const mockSetFilters = vi.fn();
-
-vi.mock('@/stores/useTaskStore', () => ({
-  useTaskStore: () => ({
-    filters: {},
-    setFilters: mockSetFilters,
-  }),
-}));
-
-const makeTasks = (count: number): Task[] =>
-  Array.from({ length: count }, (_, i) => ({
-    id: String(i + 1),
-    name: `Task ${i + 1}`,
-    projectId: 'p1',
-    priority: TaskPriority.MEDIUM,
-    status: TaskStatus.NOT_STARTED,
-    assigneeId: 'u1',
-    participantIds: [],
-    progress: 0,
-    milestone: false,
-    dependencies: [],
-    tags: [],
-    createdAt: '2025-01-01',
-    updatedAt: '2025-01-01',
-  }));
+const mockCategoryChange = vi.fn();
 
 const renderWithAntd = (ui: React.ReactElement) =>
   render(<ConfigProvider>{ui}</ConfigProvider>);
 
-const FILTER_LABELS = [
-  '今日', '本周', '本月', '全部', '预警', '超期',
-  '问题', '风险', '建议', '关注', '事务', '阶段',
-  '审批', '变更', '里程碑',
-];
+const FILTER_LABELS = ['今日', '本周', '逾期', '预警'];
 
 describe('FilterBar', () => {
   beforeEach(() => {
-    mockSetFilters.mockClear();
+    mockCategoryChange.mockClear();
   });
 
-  it('renders all 15 filter items', () => {
-    renderWithAntd(<FilterBar tasks={makeTasks(5)} />);
+  it('renders only 4 high-frequency shortcut chips', () => {
+    renderWithAntd(
+      <FilterBar activeCategory="all" onCategoryChange={mockCategoryChange} />
+    );
     for (const label of FILTER_LABELS) {
       expect(screen.getByText(label)).toBeInTheDocument();
     }
+    // Should NOT render removed items
+    expect(screen.queryByText('全部')).not.toBeInTheDocument();
+    expect(screen.queryByText('本月')).not.toBeInTheDocument();
+    expect(screen.queryByText('问题')).not.toBeInTheDocument();
+    expect(screen.queryByText('风险')).not.toBeInTheDocument();
+    expect(screen.queryByText('建议')).not.toBeInTheDocument();
+    expect(screen.queryByText('关注')).not.toBeInTheDocument();
+    expect(screen.queryByText('事务')).not.toBeInTheDocument();
+    expect(screen.queryByText('阶段')).not.toBeInTheDocument();
   });
 
-  it('clicking a filter item toggles active state and calls setFilters', async () => {
-    const user = userEvent.setup();
-    renderWithAntd(<FilterBar tasks={makeTasks(3)} />);
-
-    const todayLabel = screen.getByText('今日');
-    const todayItem = todayLabel.closest('[class*="filterItem"]')!;
-    expect(todayItem.className).not.toContain('filterItemActive');
-
-    await user.click(todayItem);
-    expect(todayItem.className).toContain('filterItemActive');
-    expect(mockSetFilters).toHaveBeenCalledWith(
-      expect.objectContaining({ dateRange: expect.any(Array) }),
+  it('renders filter bar container', () => {
+    renderWithAntd(
+      <FilterBar activeCategory="all" onCategoryChange={mockCategoryChange} />
     );
+    expect(screen.getByTestId('filter-bar')).toBeInTheDocument();
   });
 
-  it('clicking "all" filter clears filters', async () => {
+  it('highlights the chip matching activeCategory prop', () => {
+    renderWithAntd(
+      <FilterBar activeCategory="today" onCategoryChange={mockCategoryChange} />
+    );
+    const todayChip = screen.getByTestId('filter-today');
+    expect(todayChip.className).toContain('chipActive');
+
+    // Others should not be active
+    const weekChip = screen.getByTestId('filter-thisWeek');
+    expect(weekChip.className).not.toContain('chipActive');
+  });
+
+  it('highlights thisWeek chip when activeCategory is thisWeek', () => {
+    renderWithAntd(
+      <FilterBar activeCategory="thisWeek" onCategoryChange={mockCategoryChange} />
+    );
+    const weekChip = screen.getByTestId('filter-thisWeek');
+    expect(weekChip.className).toContain('chipActive');
+  });
+
+  it('no chip is highlighted when activeCategory does not match any chip', () => {
+    renderWithAntd(
+      <FilterBar activeCategory="all" onCategoryChange={mockCategoryChange} />
+    );
+    const chips = screen.getAllByRole('button');
+    for (const chip of chips) {
+      expect(chip.className).not.toContain('chipActive');
+    }
+  });
+
+  it('clicking a chip calls onCategoryChange with the correct category key', async () => {
     const user = userEvent.setup();
-    renderWithAntd(<FilterBar tasks={makeTasks(2)} />);
+    renderWithAntd(
+      <FilterBar activeCategory="all" onCategoryChange={mockCategoryChange} />
+    );
 
-    const allItem = screen.getByText('全部').closest('[class*="filterItem"]')!;
-    await user.click(allItem);
+    await user.click(screen.getByTestId('filter-today'));
+    expect(mockCategoryChange).toHaveBeenCalledWith('today');
 
-    expect(mockSetFilters).toHaveBeenCalledWith({
-      status: undefined,
-      dateRange: undefined,
-      keyword: undefined,
-    });
+    await user.click(screen.getByTestId('filter-thisWeek'));
+    expect(mockCategoryChange).toHaveBeenCalledWith('thisWeek');
+
+    await user.click(screen.getByTestId('filter-overdue'));
+    expect(mockCategoryChange).toHaveBeenCalledWith('overdue');
+
+    await user.click(screen.getByTestId('filter-warning'));
+    expect(mockCategoryChange).toHaveBeenCalledWith('warning');
   });
 
-  it('renders status dropdown', () => {
-    renderWithAntd(<FilterBar tasks={makeTasks(1)} />);
-    expect(screen.getByText('全部状态')).toBeInTheDocument();
-  });
+  it('does not maintain internal active state — relies on activeCategory prop', () => {
+    const { rerender } = renderWithAntd(
+      <FilterBar activeCategory="all" onCategoryChange={mockCategoryChange} />
+    );
 
-  it('renders date range picker with placeholders', () => {
-    renderWithAntd(<FilterBar tasks={makeTasks(1)} />);
-    expect(screen.getByPlaceholderText('开始日期')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('结束日期')).toBeInTheDocument();
+    // No chip active initially
+    const todayChip = screen.getByTestId('filter-today');
+    expect(todayChip.className).not.toContain('chipActive');
+
+    // Parent changes activeCategory to today
+    rerender(
+      <ConfigProvider>
+        <FilterBar activeCategory="today" onCategoryChange={mockCategoryChange} />
+      </ConfigProvider>
+    );
+    expect(todayChip.className).toContain('chipActive');
+
+    // Parent changes to overdue
+    rerender(
+      <ConfigProvider>
+        <FilterBar activeCategory="overdue" onCategoryChange={mockCategoryChange} />
+      </ConfigProvider>
+    );
+    expect(todayChip.className).not.toContain('chipActive');
+    expect(screen.getByTestId('filter-overdue').className).toContain('chipActive');
   });
 });

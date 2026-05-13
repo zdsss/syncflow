@@ -201,3 +201,55 @@
   color: var(--color-text-primary, #333);
   line-height: 1.6;
 }
+
+/* Responsive */
+@media (max-width: 1280px) {
+  .aiPanel {
+    width: 320px;
+  }
+
+  .aiPanelWide {
+    width: 420px;
+  }
+}
+
+@media (max-width: 1024px) {
+  .aiPanel {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 320px;
+    z-index: 20;
+    box-shadow: -2px 0 12px rgba(0, 0, 0, 0.12);
+    border-radius: 0;
+  }
+
+  .aiPanelWide {
+    width: 380px;
+  }
+
+  .closeButton,
+  .sizeToggle {
+    width: 44px;
+    height: 44px;
+  }
+}
+
+@media (max-width: 768px) {
+  .aiPanel {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    z-index: 100;
+    border-radius: 0;
+    border-left: none;
+  }
+
+  .aiPanelWide {
+    width: 100%;
+  }
+}

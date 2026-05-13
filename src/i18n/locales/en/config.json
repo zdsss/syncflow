@@ -1,0 +1,23 @@
+{
+  "configMgmt": "Configuration",
+  "rolePermission": "Roles & Permissions",
+  "memberMgmt": "Member Management",
+  "notificationSettings": "Notification Settings",
+  "department": "Department",
+  "role": "Role",
+  "addMember": "Add Member",
+  "removeMember": "Remove Member",
+  "taskReminder": "Task Reminder",
+  "emailNotification": "Email Notification",
+  "appNotification": "In-App Notification",
+  "permission": "Permission",
+  "roleName": "Role Name",
+  "memberName": "Member Name",
+  "memberEmail": "Member Email",
+  "operation": "Operation",
+  "editRole": "Edit Role",
+  "createRole": "Create Role",
+  "systemSettings": "System Settings",
+  "security": "Security Settings",
+  "auditLog": "Audit Log"
+}

@@ -19,6 +19,12 @@ export default defineConfig({
       provider: 'v8',
       include: ['src/**/*.{ts,tsx}'],
       exclude: ['src/**/*.d.ts', 'src/**/*.spec.*', 'src/**/*.test.*', 'src/test/**', 'src/mocks/**', 'src/vite-env.d.ts'],
+      thresholds: {
+        statements: 85,
+        branches: 70,
+        functions: 85,
+        lines: 85,
+      },
     },
   },
 });

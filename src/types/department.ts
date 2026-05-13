@@ -1,6 +1,6 @@
 export interface Department {
-  id: string;
+  id: number; // was string
   name: string;
-  parentId?: string | null;
+  parentId?: number | null; // was string
   sortOrder?: number;
 }

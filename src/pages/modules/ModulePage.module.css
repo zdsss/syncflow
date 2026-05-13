@@ -1,0 +1,163 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  background: #f5f7fa;
+}
+
+/* Page header */
+.pageHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 20px;
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.pageTitle {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0;
+}
+
+.headerActions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.searchInput {
+  width: 220px;
+}
+
+/* Tab bar */
+.tabBar {
+  display: flex;
+  gap: 0;
+  padding: 0 20px;
+  background: #fff;
+  border-bottom: 1px solid #e8e8e8;
+}
+
+.tabItem {
+  padding: 10px 20px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: #666;
+  border-bottom: 2px solid transparent;
+  transition: all 0.15s;
+}
+
+.tabItem:hover {
+  color: #3366ff;
+}
+
+.activeTab {
+  color: #3366ff;
+  border-bottom-color: #3366ff;
+  font-weight: 500;
+}
+
+/* Content */
+.content {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Two-panel split layout */
+.splitLayout {
+  display: flex;
+  height: 100%;
+  min-height: 0;
+}
+
+/* Left tree panel */
+.treePanel {
+  width: 220px;
+  min-width: 220px;
+  background: #fff;
+  border-right: 1px solid #e8e8e8;
+  overflow-y: auto;
+  padding: 12px;
+}
+
+.treeTitle {
+  font-size: 14px;
+  font-weight: 600;
+  color: #1a1a1a;
+  margin: 0 0 10px 0;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+/* Right data table panel */
+.dataPanel {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+  padding: 0;
+  background: #f5f7fa;
+}
+
+/* BOM Table - Blue header */
+.bomTable :global(.ant-table-thead > tr > th) {
+  background: #3366ff !important;
+  color: #fff !important;
+  border-bottom: none;
+  font-size: 13px;
+  font-weight: 500;
+  padding: 8px 12px;
+}
+
+.bomTable :global(.ant-table-thead > tr > th::before) {
+  display: none;
+}
+
+.bomTable :global(.ant-table-tbody > tr > td) {
+  padding: 6px 12px;
+  font-size: 13px;
+}
+
+.bomTable :global(.ant-table-tbody > tr:hover > td) {
+  background: #f0f5ff;
+}
+
+/* BOM indent lines */
+.bomIndent {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.bomLine {
+  display: inline-block;
+  width: 16px;
+  height: 1px;
+  background: #d9d9d9;
+  margin-right: 4px;
+  vertical-align: middle;
+}
+
+/* Placeholder for other tabs */
+.placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #999;
+  font-size: 16px;
+  background: #fff;
+}
+
+.placeholderIcon {
+  font-size: 48px;
+  margin-bottom: 16px;
+  opacity: 0.3;
+}

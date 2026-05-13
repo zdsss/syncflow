@@ -1,9 +1,9 @@
 export interface Team {
-  id: string;
+  id: number; // was string
   name: string;
   description?: string;
   memberCount: number;
-  leaderId: string;
+  leaderId: number; // was string
   createdAt: string;
   updatedAt: string;
 }

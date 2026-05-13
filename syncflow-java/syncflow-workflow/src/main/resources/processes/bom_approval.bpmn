@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:flowable="http://flowable.org/bpmn"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             targetNamespace="http://flowable.org/examples">
+
+  <process id="BOM_APPROVAL" name="BOM Approval" isExecutable="true">
+
+    <startEvent id="startEvent" flowable:initiator="applicantId" />
+
+    <userTask id="submitBom" name="提交BOM" flowable:assignee="${applicantId}" />
+    <sequenceFlow id="flow1" sourceRef="startEvent" targetRef="submitBom" />
+
+    <userTask id="techReview" name="技术负责人审核" />
+    <sequenceFlow id="flow2" sourceRef="submitBom" targetRef="techReview" />
+
+    <!-- techReview rejection -->
+    <serviceTask id="techRejection" name="技术审核驳回处理"
+                 flowable:expression="${approvalCallbackService.onRejected(execution)}" />
+    <sequenceFlow id="flow2rej" sourceRef="techReview" targetRef="techRejection">
+      <conditionExpression xsi:type="tFormalExpression">${approved == false}</conditionExpression>
+    </sequenceFlow>
+    <endEvent id="endRejectedTech" />
+    <sequenceFlow id="flow2rejEnd" sourceRef="techRejection" targetRef="endRejectedTech" />
+
+    <userTask id="qualityReview" name="质量审核" />
+    <sequenceFlow id="flow3" sourceRef="techReview" targetRef="qualityReview">
+      <conditionExpression xsi:type="tFormalExpression">${approved == true}</conditionExpression>
+    </sequenceFlow>
+
+    <!-- qualityReview rejection -->
+    <serviceTask id="qualityRejection" name="质量审核驳回处理"
+                 flowable:expression="${approvalCallbackService.onRejected(execution)}" />
+    <sequenceFlow id="flow3rej" sourceRef="qualityReview" targetRef="qualityRejection">
+      <conditionExpression xsi:type="tFormalExpression">${approved == false}</conditionExpression>
+    </sequenceFlow>
+    <endEvent id="endRejectedQuality" />
+    <sequenceFlow id="flow3rejEnd" sourceRef="qualityRejection" targetRef="endRejectedQuality" />
+
+    <userTask id="pmApproval" name="项目经理批准" />
+    <sequenceFlow id="flow4" sourceRef="qualityReview" targetRef="pmApproval">
+      <conditionExpression xsi:type="tFormalExpression">${approved == true}</conditionExpression>
+    </sequenceFlow>
+
+    <!-- pmApproval rejection -->
+    <serviceTask id="pmRejection" name="项目经理驳回处理"
+                 flowable:expression="${approvalCallbackService.onRejected(execution)}" />
+    <sequenceFlow id="flow4rej" sourceRef="pmApproval" targetRef="pmRejection">
+      <conditionExpression xsi:type="tFormalExpression">${approved == false}</conditionExpression>
+    </sequenceFlow>
+    <endEvent id="endRejectedPm" />
+    <sequenceFlow id="flow4rejEnd" sourceRef="pmRejection" targetRef="endRejectedPm" />
+
+    <serviceTask id="publishBom" name="发布BOM"
+                 flowable:expression="${approvalCallbackService.onApproved(execution)}" />
+    <sequenceFlow id="flow5" sourceRef="pmApproval" targetRef="publishBom">
+      <conditionExpression xsi:type="tFormalExpression">${approved == true}</conditionExpression>
+    </sequenceFlow>
+
+    <endEvent id="endApproved" />
+    <sequenceFlow id="flow6" sourceRef="publishBom" targetRef="endApproved" />
+
+  </process>
+
+</definitions>

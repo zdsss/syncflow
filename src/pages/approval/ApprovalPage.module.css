@@ -16,7 +16,7 @@
 }
 
 .title {
-  font-size: 28px;
+  font-size: 20px;
   font-weight: 600;
   color: var(--color-text-title, #1A1A1A);
   margin: 0;
@@ -34,18 +34,18 @@
 .listPanel {
   flex: 1;
   min-width: 0;
-  background: #fff;
-  border-radius: var(--radius-lg, 12px);
+  background: var(--color-bg-card, #fff);
+  border-radius: var(--radius-md, 8px);
   padding: 16px;
   overflow-y: auto;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 }
 
 .detailPanel {
-  width: 400px;
-  min-width: 320px;
-  background: #fff;
-  border-radius: var(--radius-lg, 12px);
+  width: 440px;
+  min-width: 360px;
+  background: var(--color-bg-card, #fff);
+  border-radius: var(--radius-md, 8px);
   padding: 16px;
   overflow-y: auto;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
@@ -83,4 +83,59 @@
   display: flex;
   gap: 12px;
   margin-top: 24px;
+}
+
+/* Responsive */
+@media (max-width: 1100px) {
+  .mainContent {
+    flex-direction: column;
+  }
+
+  .detailPanel {
+    width: 100%;
+    min-width: unset;
+    max-height: none;
+    flex: 1;
+    min-height: 300px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .listPanel {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 768px) {
+  .approvalPage {
+    padding: 12px;
+    gap: 12px;
+    padding-bottom: env(safe-area-inset-bottom, 12px);
+  }
+
+  .title {
+    font-size: 16px;
+  }
+
+  .listPanel {
+    padding: 12px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .detailPanel {
+    padding: 12px;
+    max-height: 40vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .actionButtons {
+    flex-direction: column;
+  }
+
+  .actionButtons button {
+    min-height: 44px;
+  }
 }

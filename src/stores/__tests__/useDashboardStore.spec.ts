@@ -44,4 +44,10 @@ describe('useDashboardStore', () => {
     useDashboardStore.getState().setDateRange(['2024-01-01', '2024-06-01']);
     expect(useDashboardStore.getState().dateRange).toEqual(['2024-01-01', '2024-06-01']);
   });
+
+  it('setDateRange with null clears date range', () => {
+    useDashboardStore.getState().setDateRange(['2024-01-01', '2024-06-01']);
+    useDashboardStore.getState().setDateRange(null);
+    expect(useDashboardStore.getState().dateRange).toBeNull();
+  });
 });

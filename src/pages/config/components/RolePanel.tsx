@@ -1,11 +1,15 @@
-import { Button, message } from 'antd';
+import { useState } from 'react';
+import { Button, Modal, Form, Input, message } from 'antd';
 import { PlusOutlined } from '@ant-design/icons';
 import { useConfigStore } from '@/stores/useConfigStore';
-import { getMembers } from '@/services/config.service';
+import { getMembers, createRole } from '@/services/config.service';
 import styles from './RolePanel.module.css';
 
 export default function RolePanel() {
-  const { roles, selectedRoleId, selectRole, setMembers, loading } = useConfigStore();
+  const { roles, selectedRoleId, selectedDepartmentId, selectRole, setMembers, setRoles, loading } = useConfigStore();
+  const [modalOpen, setModalOpen] = useState(false);
+  const [form] = Form.useForm();
+  const [submitting, setSubmitting] = useState(false);
 
   const handleSelectRole = async (roleId: string) => {
     selectRole(roleId);
@@ -18,7 +22,29 @@ export default function RolePanel() {
   };
 
   const handleAddRole = () => {
-    message.info('添加角色功能开发中...');
+    form.resetFields();
+    setModalOpen(true);
+  };
+
+  const handleModalOk = async () => {
+    try {
+      const values = await form.validateFields();
+      setSubmitting(true);
+      const res = await createRole({
+        name: values.name,
+        departmentId: selectedDepartmentId || '',
+        description: values.description,
+      });
+      // Add new role to store
+      setRoles([...roles, { ...res.data, memberCount: 0 }]);
+      setModalOpen(false);
+      message.success('角色创建成功');
+    } catch (err: any) {
+      if (err?.errorFields) return; // form validation error
+      message.error('创建角色失败');
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -44,6 +70,28 @@ export default function RolePanel() {
           添加角色
         </Button>
       </div>
+      <Modal
+        title="新建角色"
+        open={modalOpen}
+        onOk={handleModalOk}
+        onCancel={() => setModalOpen(false)}
+        confirmLoading={submitting}
+        okText="确定"
+        cancelText="取消"
+      >
+        <Form form={form} layout="vertical">
+          <Form.Item
+            name="name"
+            label="角色名称"
+            rules={[{ required: true, message: '请输入角色名称' }]}
+          >
+            <Input placeholder="请输入角色名称" />
+          </Form.Item>
+          <Form.Item name="description" label="描述">
+            <Input.TextArea placeholder="请输入角色描述" rows={3} />
+          </Form.Item>
+        </Form>
+      </Modal>
     </div>
   );
 }

@@ -14,9 +14,10 @@ interface Template {
 interface TemplateGridProps {
   templates: Template[];
   onClick: (id: string) => void;
+  onExport?: (id: string) => void;
 }
 
-export default function TemplateGrid({ templates, onClick }: TemplateGridProps) {
+export default function TemplateGrid({ templates, onClick, onExport }: TemplateGridProps) {
   if (templates.length === 0) {
     return <Empty description="暂无模板" />;
   }
@@ -24,7 +25,7 @@ export default function TemplateGrid({ templates, onClick }: TemplateGridProps) 
   return (
     <div className={styles.grid}>
       {templates.map((template) => (
-        <TemplateCard key={template.id} template={template} onClick={onClick} />
+        <TemplateCard key={template.id} template={template} onClick={onClick} onExport={onExport} />
       ))}
     </div>
   );

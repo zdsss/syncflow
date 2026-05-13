@@ -1,33 +1,56 @@
-import { render, screen } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { ConfigProvider } from 'antd';
+import { ConfigProvider, message } from 'antd';
 import NotificationSettings from './NotificationSettings';
+import { getNotificationSettings, updateNotificationSettings } from '@/services/config.service';
+
+vi.mock('antd', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('antd')>();
+  return {
+    ...actual,
+    message: {
+      ...actual.message,
+      success: vi.fn(),
+      error: vi.fn(),
+      info: vi.fn(),
+    },
+  };
+});
+
+vi.mock('@/services/config.service', () => ({
+  getNotificationSettings: vi.fn().mockResolvedValue({
+    data: { taskReminder: true, emailNotify: true, appNotify: true, smsNotify: false, reminderDays: 3 },
+  }),
+  updateNotificationSettings: vi.fn().mockResolvedValue({ data: {} }),
+}));
+
+vi.mock('@/stores/useAuthStore', () => ({
+  useAuthStore: (selector: any) => selector({ currentUser: { id: 'user-1', name: 'Test User' } }),
+}));
 
 const renderWithAntd = (ui: React.ReactElement) =>
   render(<ConfigProvider>{ui}</ConfigProvider>);
 
 describe('NotificationSettings', () => {
-  it('renders master toggle switch', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    (getNotificationSettings as any).mockResolvedValue({
+      data: { taskReminder: true, emailNotify: true, appNotify: true, smsNotify: false, reminderDays: 3 },
+    });
+  });
+
+  it('renders master toggle switch', async () => {
     renderWithAntd(<NotificationSettings />);
     expect(screen.getByText('任务提醒')).toBeInTheDocument();
-    // The switch should be checked by default (taskReminder initial = true)
-    const switchEl = screen.getByRole('switch');
-    expect(switchEl).toBeChecked();
+    await waitFor(() => {
+      const switchEl = screen.getByRole('switch');
+      expect(switchEl).toBeChecked();
+    });
   });
 
   it('renders checkbox group with three channels', () => {
     renderWithAntd(<NotificationSettings />);
     expect(screen.getByText('通知渠道')).toBeInTheDocument();
-    expect(screen.getByText('邮件通知')).toBeInTheDocument();
-    expect(screen.getByText('应用内通知')).toBeInTheDocument();
-    expect(screen.getByText('短信通知')).toBeInTheDocument();
-  });
-
-  it('email and inApp are checked by default, sms is not', () => {
-    renderWithAntd(<NotificationSettings />);
-    const checkboxes = screen.getAllByRole('checkbox');
-    // Ant Design Checkbox.Group renders hidden native + styled spans
-    // We can check the group labels are present
     expect(screen.getByText('邮件通知')).toBeInTheDocument();
     expect(screen.getByText('应用内通知')).toBeInTheDocument();
     expect(screen.getByText('短信通知')).toBeInTheDocument();
@@ -41,40 +64,87 @@ describe('NotificationSettings', () => {
     expect(screen.getByText('提前7天')).toBeInTheDocument();
   });
 
-  it('3-day reminder is selected by default', () => {
-    renderWithAntd(<NotificationSettings />);
-    const radio3 = screen.getByLabelText('提前3天') || screen.getByText('提前3天').closest('label')?.querySelector('input');
-    // Ant Design Radio wraps the label; check the radio group value
-    // The "提前3天" radio should be checked
-    const radios = screen.getAllByRole('radio');
-    const checkedRadio = radios.find((r) => (r as HTMLInputElement).checked);
-    expect(checkedRadio).toBeTruthy();
-  });
-
   it('renders save and reset buttons', () => {
     renderWithAntd(<NotificationSettings />);
     expect(screen.getByText(/保存设置/)).toBeInTheDocument();
     expect(screen.getByText(/重\s*置/)).toBeInTheDocument();
   });
 
-  it('save button is a primary button', () => {
-    renderWithAntd(<NotificationSettings />);
-    const saveBtn = screen.getByText(/保存设置/).closest('button')!;
-    expect(saveBtn.className).toContain('ant-btn-primary');
-  });
-
   it('clicking reset restores defaults', async () => {
     const user = userEvent.setup();
     renderWithAntd(<NotificationSettings />);
+    await waitFor(() => {
+      expect(getNotificationSettings).toHaveBeenCalledWith('user-1');
+    });
 
-    // Toggle the switch off
     const switchEl = screen.getByRole('switch');
     await user.click(switchEl);
     expect(switchEl).not.toBeChecked();
 
-    // Click reset (Ant Design 6 may insert space in button text)
     await user.click(screen.getByText(/重\s*置/));
-    // Switch should be checked again
     expect(screen.getByRole('switch')).toBeChecked();
+    expect(message.info).toHaveBeenCalledWith('已重置为默认设置');
+  });
+
+  it('clicking save shows success message', async () => {
+    const user = userEvent.setup();
+    renderWithAntd(<NotificationSettings />);
+    await waitFor(() => {
+      expect(getNotificationSettings).toHaveBeenCalledWith('user-1');
+    });
+    await user.click(screen.getByText(/保存设置/));
+    await waitFor(() => {
+      expect(message.success).toHaveBeenCalledWith('通知设置已保存');
+    });
+  });
+
+  it('fetches notification settings with actual user ID on mount', async () => {
+    renderWithAntd(<NotificationSettings />);
+    await waitFor(() => {
+      expect(getNotificationSettings).toHaveBeenCalledWith('user-1');
+    });
+  });
+
+  it('initializes form with fetched settings', async () => {
+    (getNotificationSettings as any).mockResolvedValue({
+      data: { taskReminder: false, emailNotify: false, appNotify: false, smsNotify: true, reminderDays: 7 },
+    });
+    renderWithAntd(<NotificationSettings />);
+    await waitFor(() => {
+      expect(getNotificationSettings).toHaveBeenCalledWith('user-1');
+    });
+    await waitFor(() => {
+      const switchEl = screen.getByRole('switch');
+      expect(switchEl).not.toBeChecked();
+    });
+  });
+
+  it('save button calls updateNotificationSettings with correct user ID', async () => {
+    const user = userEvent.setup();
+    renderWithAntd(<NotificationSettings />);
+    await waitFor(() => {
+      expect(getNotificationSettings).toHaveBeenCalledWith('user-1');
+    });
+    await user.click(screen.getByText(/保存设置/));
+    await waitFor(() => {
+      expect(updateNotificationSettings).toHaveBeenCalledWith(
+        'user-1',
+        expect.objectContaining({ taskReminder: true, reminderDays: 3 }),
+      );
+    });
+  });
+
+  it('radio group onChange updates reminder days', async () => {
+    const user = userEvent.setup();
+    renderWithAntd(<NotificationSettings />);
+    await waitFor(() => {
+      expect(getNotificationSettings).toHaveBeenCalledWith('user-1');
+    });
+
+    await user.click(screen.getByText('提前7天'));
+    const radios = screen.getAllByRole('radio');
+    const checkedRadio = radios.find((r) => (r as HTMLInputElement).checked);
+    expect(checkedRadio).toBeTruthy();
+    expect((checkedRadio as HTMLInputElement).value).toBe('7');
   });
 });

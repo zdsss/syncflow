@@ -1,110 +1,41 @@
 .filterBar {
   flex-shrink: 0;
   display: flex;
-  flex-direction: column;
-  gap: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px 0;
 }
 
-.iconRow {
-  display: flex;
-  gap: 4px;
-  overflow-x: auto;
-  padding-bottom: 4px;
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
-
-.iconRow::-webkit-scrollbar {
-  display: none;
-}
-
-.filterItem {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  padding: 8px 10px 6px;
-  border-radius: var(--radius-md, 8px);
+.chip {
+  background: var(--color-bg-page, #F5F7FA);
+  border: 1px solid var(--color-border, #E8E8E8);
+  border-radius: 16px;
+  padding: 4px 12px;
+  font-size: 13px;
   cursor: pointer;
-  position: relative;
-  flex-shrink: 0;
-  transition: all 0.2s;
-  min-width: 64px;
-  user-select: none;
-}
-
-.filterItem:hover {
-  background: var(--color-bg-hover, #F5F5F5);
-}
-
-.filterItemActive {
-  background: var(--color-primary-1, #EBF0FF);
-}
-
-.filterItemActive::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  left: 8px;
-  right: 8px;
-  height: 3px;
-  border-radius: 2px;
-  background: var(--color-primary-5, #3366FF);
-}
-
-.iconWrapper {
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius-sm, 4px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  position: relative;
-}
-
-.filterLabel {
-  font-size: 12px;
-  color: var(--color-text-secondary, #666);
   white-space: nowrap;
-}
-
-.filterItemActive .filterLabel {
-  color: var(--color-primary-5, #3366FF);
-  font-weight: 500;
-}
-
-.countBadge {
-  position: absolute;
-  top: -4px;
-  right: -6px;
-  min-width: 16px;
-  height: 16px;
-  border-radius: 8px;
-  background: var(--color-urgent, #FF4D4F);
-  color: #fff;
-  font-size: 10px;
-  line-height: 16px;
-  text-align: center;
-  padding: 0 4px;
-  font-weight: 500;
-}
-
-.secondaryRow {
+  color: #333;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 4px;
+  transition: all 0.2s;
 }
 
-.datePicker {
-  min-width: 240px;
+.chipActive {
+  background: #EBF0FF;
+  border-color: var(--color-primary-5, #3366FF);
+  color: var(--color-primary-5, #3366FF);
 }
 
-.statusDropdown {
-  min-width: 120px;
+.chip:hover {
+  border-color: var(--color-primary-5, #3366FF);
 }
 
-.keywordSearch {
-  flex: 1;
-  max-width: 240px;
+.chipCount {
+  font-size: 12px;
+  color: #999;
+}
+
+.chipActive .chipCount {
+  color: var(--color-primary-5, #3366FF);
 }

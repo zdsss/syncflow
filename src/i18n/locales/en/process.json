@@ -1,0 +1,19 @@
+{
+  "title": "Process Management",
+  "routes": "Process Routes",
+  "steps": "Process Steps",
+  "addRoute": "New Process Route",
+  "addStep": "Add Step",
+  "edit": "Edit",
+  "delete": "Delete",
+  "name": "Name",
+  "description": "Description",
+  "status": "Status",
+  "version": "Version",
+  "parameters": "Parameters",
+  "files": "Process Files",
+  "sop": "SOP",
+  "processCard": "Process Card",
+  "inspection": "Inspection Standard",
+  "controlPlan": "Control Plan"
+}

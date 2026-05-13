@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.syncflow.task.mapper.TaskMapper">
+
+    <!-- ================================================================== -->
+    <!-- selectTaskPage: Paginated task list with dynamic filters            -->
+    <!-- ================================================================== -->
+    <select id="selectTaskPage"
+            resultType="com.syncflow.task.dto.TaskListVO">
+        SELECT
+            t.id,
+            t.task_no       AS taskNo,
+            t.title,
+            t.type,
+            t.status,
+            t.priority,
+            t.progress,
+            t.project_id    AS projectId,
+            t.assignee_id   AS assigneeId,
+            t.milestone_id  AS milestoneId,
+            t.due_date      AS dueDate,
+            t.is_overdue    AS isOverdue,
+            t.is_warning    AS isWarning,
+            t.comment_count AS commentCount,
+            p.name          AS projectName,
+            u.real_name     AS assigneeName
+        FROM tsk_task t
+        LEFT JOIN prj_project p ON p.id = t.project_id
+        LEFT JOIN sys_user u    ON u.id = t.assignee_id
+        <where>
+            t.deleted_at IS NULL
+
+            <if test="query.projectId != null">
+                AND t.project_id = #{query.projectId}
+            </if>
+
+            <if test="query.phaseId != null">
+                AND t.phase_id = #{query.phaseId}
+            </if>
+
+            <if test="query.types != null and query.types.size() > 0">
+                AND t.type IN
+                <foreach collection="query.types" item="tp" open="(" separator="," close=")">
+                    #{tp}
+                </foreach>
+            </if>
+
+            <if test="query.statuses != null and query.statuses.size() > 0">
+                AND t.status IN
+                <foreach collection="query.statuses" item="st" open="(" separator="," close=")">
+                    #{st}
+                </foreach>
+            </if>
+
+            <if test="query.assigneeId != null">
+                AND t.assignee_id = #{query.assigneeId}
+            </if>
+
+            <if test="query.keyword != null and query.keyword != ''">
+                AND (t.title ILIKE CONCAT('%', #{query.keyword}, '%')
+                     OR t.description ILIKE CONCAT('%', #{query.keyword}, '%'))
+            </if>
+
+            <if test="query.isOverdue != null">
+                AND t.is_overdue = #{query.isOverdue}
+            </if>
+
+            <if test="query.startDateFrom != null">
+                AND t.planned_start &gt;= #{query.startDateFrom}
+            </if>
+
+            <if test="query.startDateTo != null">
+                AND t.planned_start &lt;= #{query.startDateTo}
+            </if>
+
+            <if test="query.dueDateFrom != null">
+                AND t.due_date &gt;= #{query.dueDateFrom}
+            </if>
+
+            <if test="query.dueDateTo != null">
+                AND t.due_date &lt;= #{query.dueDateTo}
+            </if>
+        </where>
+        ORDER BY t.created_at DESC
+    </select>
+
+</mapper>

@@ -1,13 +1,13 @@
-import { Layout, Menu } from 'antd';
+import { useState } from 'react';
+import { Tooltip, Drawer } from 'antd';
+import { SettingOutlined, MenuOutlined } from '@ant-design/icons';
 import { useLocation, useNavigate } from 'react-router-dom';
-import { useAppStore } from '@/stores/useAppStore';
 import { useTranslation } from 'react-i18next';
 import { NAV_ITEMS } from '@/constants/navigation';
+import { useAppStore } from '@/stores/useAppStore';
+import { useAuthStore } from '@/stores/useAuthStore';
 import styles from './Sidebar.module.css';
 
-const { Sider } = Layout;
-
-// Import all nav icons
 import workspaceSvg from '@/assets/icons/nav/workspace.svg?react';
 import workspaceActiveSvg from '@/assets/icons/nav/workspace-active.svg?react';
 import projectMgmtSvg from '@/assets/icons/nav/project-mgmt.svg?react';
@@ -32,6 +32,8 @@ import templateSvg from '@/assets/icons/nav/template.svg?react';
 import templateActiveSvg from '@/assets/icons/nav/template-active.svg?react';
 import personalFolderSvg from '@/assets/icons/nav/personal-folder.svg?react';
 import personalFolderActiveSvg from '@/assets/icons/nav/personal-folder-active.svg?react';
+import approvalSvg from '@/assets/icons/nav/approval.svg?react';
+import approvalActiveSvg from '@/assets/icons/nav/approval-active.svg?react';
 
 const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
   'workspace': workspaceSvg,
@@ -46,6 +48,7 @@ const iconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>
   'knowledge': knowledgeSvg,
   'template': templateSvg,
   'personal-folder': personalFolderSvg,
+  'approval': approvalSvg,
 };
 
 const activeIconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGElement>>> = {
@@ -61,56 +64,98 @@ const activeIconMap: Record<string, React.ComponentType<React.SVGProps<SVGSVGEle
   'knowledge': knowledgeActiveSvg,
   'template': templateActiveSvg,
   'personal-folder': personalFolderActiveSvg,
+  'approval': approvalActiveSvg,
 };
 
 export default function Sidebar() {
-  const { sidebarCollapsed, toggleSidebar, locale } = useAppStore();
+  const { locale } = useAppStore();
+  const { currentUser } = useAuthStore();
   const location = useLocation();
   const navigate = useNavigate();
   const { t } = useTranslation('sidebar');
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  const menuItems = NAV_ITEMS.map((item) => {
-    const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
-    const IconComponent = isActive ? activeIconMap[item.iconKey] : iconMap[item.iconKey];
+  const navContent = (
+    <>
+      <div className={styles.avatarSection}>
+        <Tooltip title={currentUser?.realName || currentUser?.username || '用户'} placement="right">
+          <div className={styles.avatar}>
+            {currentUser?.avatar ? (
+              <img src={currentUser.avatar} alt="" className={styles.avatarImg} />
+            ) : (
+              (currentUser?.realName || currentUser?.username || 'U')[0]
+            )}
+            <span className={styles.onlineDot} />
+          </div>
+        </Tooltip>
+      </div>
 
-    return {
-      key: item.path,
-      label: locale === 'zh' ? item.label : item.labelEn,
-      icon: IconComponent ? (
-        <IconComponent
-          width={24}
-          height={24}
-          style={{ color: isActive ? '#3366FF' : '#333333' }}
-        />
-      ) : null,
-      disabled: (item as any).comingSoon,
-    };
-  });
+      <div className={styles.navList}>
+        {NAV_ITEMS.map((item) => {
+          const isActive = location.pathname === item.path || location.pathname.startsWith(item.path + '/');
+          const IconComponent = isActive ? activeIconMap[item.iconKey] : iconMap[item.iconKey];
+          const label = locale === 'zh' ? item.label : item.labelEn;
+
+          return (
+            <Tooltip key={item.key} title={label} placement="right">
+              <div
+                role="link"
+                aria-label={label}
+                aria-current={isActive ? 'page' : undefined}
+                className={`${styles.navItem} ${isActive ? styles.navItemActive : ''}`}
+                onClick={() => { navigate(item.path); setMobileOpen(false); }}
+                onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { navigate(item.path); setMobileOpen(false); } }}
+                tabIndex={0}
+              >
+                {IconComponent && (
+                  <IconComponent className={styles.navIcon} width={24} height={24} />
+                )}
+                <span className={styles.navLabel}>{label}</span>
+              </div>
+            </Tooltip>
+          );
+        })}
+      </div>
+
+      <div className={styles.bottomSection}>
+        <Tooltip title={t('settings', { defaultValue: '设置' })} placement="right">
+          <div
+            className={styles.settingsItem}
+            onClick={() => { navigate('/config'); setMobileOpen(false); }}
+          >
+            <SettingOutlined className={styles.settingsIcon} />
+          </div>
+        </Tooltip>
+      </div>
+    </>
+  );
 
   return (
-    <Sider
-      collapsed={sidebarCollapsed}
-      width={240}
-      collapsedWidth={64}
-      className={styles.sidebar}
-    >
-      <div className={styles.logo}>
-        {sidebarCollapsed ? (
-          <span className={styles.logoIcon}>SF</span>
-        ) : (
-          <span className={styles.logoText}>SyncFlow</span>
-        )}
-      </div>
-      <Menu
-        mode="inline"
-        selectedKeys={[location.pathname]}
-        items={menuItems}
-        onClick={({ key }) => navigate(key)}
-        className={styles.menu}
-      />
-      <div className={styles.collapseBtn} onClick={toggleSidebar}>
-        {sidebarCollapsed ? '>' : '<'}
-      </div>
-    </Sider>
+    <>
+      {/* Desktop sidebar */}
+      <nav className={`${styles.sidebar} app-sidebar`} aria-label="主导航">
+        {navContent}
+      </nav>
+
+      {/* Mobile hamburger button */}
+      <button
+        className={styles.mobileMenuBtn}
+        onClick={() => setMobileOpen(true)}
+        aria-label="打开导航菜单"
+      >
+        <MenuOutlined />
+      </button>
+
+      {/* Mobile drawer */}
+      <Drawer
+        open={mobileOpen}
+        onClose={() => setMobileOpen(false)}
+        placement="left"
+        styles={{ body: { padding: 0, display: 'flex', flexDirection: 'column', height: '100%' } }}
+        className={styles.mobileDrawer}
+      >
+        {navContent}
+      </Drawer>
+    </>
   );
 }

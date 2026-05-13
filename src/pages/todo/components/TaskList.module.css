@@ -39,6 +39,13 @@
   transition: background 0.2s;
 }
 
+/* Task code */
+.taskCode {
+  font-size: 13px;
+  color: var(--color-text-secondary, #666);
+  white-space: nowrap;
+}
+
 /* Task name */
 .taskName {
   cursor: pointer;
@@ -53,6 +60,24 @@
 
 .taskName:hover {
   color: var(--color-primary-5, #3366FF);
+}
+
+/* Tag badges */
+.tagsRow {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+  flex-wrap: wrap;
+}
+
+.tagBadge {
+  display: inline-block;
+  padding: 0 6px;
+  border-radius: 10px;
+  font-size: 11px;
+  color: #fff;
+  line-height: 18px;
+  white-space: nowrap;
 }
 
 /* Status badge */
@@ -89,6 +114,12 @@
 .assignee {
   font-size: 13px;
   color: var(--color-text-primary, #333);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.assignee:hover {
+  color: var(--color-primary-5, #3366FF);
 }
 
 /* Due date */
@@ -137,6 +168,77 @@
   text-align: center;
   font-size: 12px;
   outline: none;
+}
+
+/* Dependency */
+.dependencyCell {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  cursor: pointer;
+  color: var(--color-primary-5, #3366FF);
+  font-size: 13px;
+}
+
+.dependencyCell:hover {
+  opacity: 0.8;
+}
+
+.dependencyList {
+  padding: 4px 0;
+}
+
+.dependencyItem {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 4px 8px;
+  font-size: 13px;
+}
+
+.dependencyName {
+  color: var(--color-text-primary, #333);
+}
+
+.removeDepBtn {
+  color: #FF4D4F;
+  cursor: pointer;
+  font-size: 12px;
+  border: none;
+  background: none;
+  padding: 0 4px;
+}
+
+.removeDepBtn:hover {
+  opacity: 0.8;
+}
+
+.addDepBtn {
+  font-size: 12px;
+  color: var(--color-primary-5, #3366FF);
+  cursor: pointer;
+  border: none;
+  background: none;
+  padding: 4px 8px;
+}
+
+/* Milestone */
+.milestoneIcon {
+  color: #FAAD14;
+  font-size: 14px;
+  margin-left: 4px;
+}
+
+/* Work hours */
+.hoursCell {
+  font-size: 13px;
+  color: var(--color-text-primary, #333);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+
+.hoursCell:hover {
+  color: var(--color-primary-5, #3366FF);
 }
 
 /* Pagination wrapper */

@@ -1,0 +1,17 @@
+{
+  "title": "Query & Statistics",
+  "taskStats": "Task Stats",
+  "projectStats": "Project Stats",
+  "overdueTasks": "Overdue Tasks",
+  "projectProgress": "Project Progress",
+  "userWorkload": "User Workload",
+  "departmentStats": "Department Stats",
+  "exportTasks": "Export Tasks",
+  "exportProjects": "Export Projects",
+  "status": "Status",
+  "count": "Count",
+  "total": "Total",
+  "completed": "Completed",
+  "inProgress": "In Progress",
+  "overdue": "Overdue"
+}

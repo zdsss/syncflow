@@ -1,0 +1,17 @@
+{
+  "title": "查询统计",
+  "taskStats": "任务统计",
+  "projectStats": "项目统计",
+  "overdueTasks": "超期任务",
+  "projectProgress": "项目进度",
+  "userWorkload": "用户工作量",
+  "departmentStats": "部门统计",
+  "exportTasks": "导出任务",
+  "exportProjects": "导出项目",
+  "status": "状态",
+  "count": "数量",
+  "total": "总计",
+  "completed": "已完成",
+  "inProgress": "进行中",
+  "overdue": "已超期"
+}

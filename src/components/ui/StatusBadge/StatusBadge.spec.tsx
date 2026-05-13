@@ -3,14 +3,16 @@ import { TaskStatus } from '@/types';
 import { TASK_STATUS_CONFIG } from '@/constants/enums';
 import StatusBadge from './StatusBadge';
 
+const statusValues = [TaskStatus.PENDING, TaskStatus.IN_PROGRESS, TaskStatus.PENDING_REVIEW, TaskStatus.COMPLETED, TaskStatus.CANCELLED];
+
 describe('StatusBadge', () => {
-  it.each(Object.values(TaskStatus))('renders correct label for %s', (status) => {
+  it.each(statusValues)('renders correct label for %s', (status) => {
     render(<StatusBadge status={status} />);
     const config = TASK_STATUS_CONFIG[status];
     expect(screen.getByText(config.label)).toBeInTheDocument();
   });
 
-  it.each(Object.values(TaskStatus))('applies correct background color for %s', (status) => {
+  it.each(statusValues)('applies correct background color for %s', (status) => {
     render(<StatusBadge status={status} />);
     const config = TASK_STATUS_CONFIG[status];
     const badge = screen.getByText(config.label);

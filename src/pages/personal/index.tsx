@@ -1,134 +1,81 @@
-import { useState, useEffect } from 'react';
-import { Input, Button, Table, message } from 'antd';
-import { SearchOutlined, UploadOutlined, FileOutlined, DeleteOutlined } from '@ant-design/icons';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuthStore } from '@/stores/useAuthStore';
+import { useAsyncData } from '@/hooks/useAsyncData';
+import { getProjects } from '@/services/project.service';
+import { getTasks } from '@/services/task.service';
+import type { Task, Project } from '@/types';
+import NotesList from './NotesList';
+import PersonalOverview from './PersonalOverview';
+import MyTasksView from './MyTasksView';
+import KnowledgeView from './KnowledgeView';
 import styles from './PersonalPage.module.css';
 
-interface PersonalFile {
-  id: string;
-  name: string;
-  type: string;
-  extension: string;
-  size: string;
-  createdAt: string;
-}
+type SidebarKey = 'overview' | 'tasks' | 'notes' | 'knowledge';
+
+const SIDEBAR_ITEMS: { key: SidebarKey; label: string }[] = [
+  { key: 'overview', label: '个人概览' },
+  { key: 'tasks', label: '我的任务' },
+  { key: 'notes', label: '笔记本' },
+  { key: 'knowledge', label: '知识库' },
+];
 
 export default function PersonalPage() {
-  const [files, setFiles] = useState<PersonalFile[]>([]);
-  const [keyword, setKeyword] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [activeSection, setActiveSection] = useState<SidebarKey>('overview');
+  const currentUser = useAuthStore((s) => s.currentUser);
+  const userId = currentUser?.id || '';
 
-  useEffect(() => {
-    fetchFiles();
+  const fetchProjectsAndTasks = useCallback(async () => {
+    const [projRes, taskRes] = await Promise.all([
+      getProjects(),
+      getTasks({ page: 1, pageSize: 200 }),
+    ]);
+    const projects = (projRes?.data as Project[]) ?? [];
+    const taskData = taskRes?.data as { records?: Task[] } | Task[] | undefined;
+    const tasks = taskData
+      ? (Array.isArray(taskData) ? taskData : taskData.records ?? [])
+      : [];
+    return { projects, tasks };
   }, []);
 
-  const fetchFiles = async () => {
-    setLoading(true);
-    try {
-      const res = await fetch('/api/personal/files?userId=user-1');
-      const data = await res.json();
-      if (data.code === 0) {
-        setFiles(data.data);
-      }
-    } catch (error) {
-      console.error('Failed to fetch files:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { data, loading, refresh } = useAsyncData(fetchProjectsAndTasks, '加载失败');
 
-  const handleDelete = async (id: string) => {
-    try {
-      const res = await fetch(`/api/personal/files/${id}`, { method: 'DELETE' });
-      const data = await res.json();
-      if (data.code === 0) {
-        message.success('文件已删除');
-        fetchFiles();
-      }
-    } catch (error) {
-      message.error('删除失败');
-    }
-  };
+  useEffect(() => {
+    refresh();
+  }, [refresh]);
 
-  const handleUpload = () => {
-    message.info('上传功能开发中...');
-  };
-
-  const columns = [
-    {
-      title: '文件名',
-      dataIndex: 'name',
-      key: 'name',
-      render: (name: string) => (
-        <span>
-          <FileOutlined className={styles.fileIcon} />
-          {name}
-        </span>
-      ),
-    },
-    {
-      title: '类型',
-      dataIndex: 'type',
-      key: 'type',
-    },
-    {
-      title: '大小',
-      dataIndex: 'size',
-      key: 'size',
-      render: (size: string) => <span className={styles.fileSize}>{size}</span>,
-    },
-    {
-      title: '创建时间',
-      dataIndex: 'createdAt',
-      key: 'createdAt',
-      render: (date: string) => new Date(date).toLocaleDateString(),
-    },
-    {
-      title: '操作',
-      key: 'action',
-      render: (_: unknown, record: PersonalFile) => (
-        <Button
-          type="link"
-          danger
-          icon={<DeleteOutlined />}
-          onClick={() => handleDelete(record.id)}
-        >
-          删除
-        </Button>
-      ),
-    },
-  ];
-
-  const filteredFiles = files.filter((file) =>
-    file.name.toLowerCase().includes(keyword.toLowerCase())
-  );
+  const projects = data?.projects ?? [];
+  const tasks = data?.tasks ?? [];
 
   return (
     <div className={styles.page}>
       <div className={styles.header}>
-        <h1 className={styles.title}>个人文件夹</h1>
-        <div className={styles.headerActions}>
-          <Input
-            placeholder="搜索文件..."
-            prefix={<SearchOutlined />}
-            className={styles.searchInput}
-            value={keyword}
-            onChange={(e) => setKeyword(e.target.value)}
-            allowClear
-          />
-          <Button type="primary" icon={<UploadOutlined />} onClick={handleUpload}>
-            上传文件
-          </Button>
-        </div>
+        <h1 className={styles.title}>个人空间</h1>
       </div>
 
       <div className={styles.body}>
-        <Table
-          columns={columns}
-          dataSource={filteredFiles}
-          rowKey="id"
-          loading={loading}
-          pagination={{ pageSize: 10 }}
-        />
+        <div className={styles.sidebar}>
+          {SIDEBAR_ITEMS.map((item) => (
+            <div
+              key={item.key}
+              className={`${styles.sidebarItem} ${activeSection === item.key ? styles.sidebarItemActive : ''}`}
+              onClick={() => setActiveSection(item.key)}
+              data-testid={`sidebar-${item.key}`}
+            >
+              {item.label}
+            </div>
+          ))}
+        </div>
+
+        <div className={styles.content}>
+          {activeSection === 'overview' && (
+            <PersonalOverview projects={projects} tasks={tasks} />
+          )}
+          {activeSection === 'tasks' && (
+            <MyTasksView tasks={tasks} />
+          )}
+          {activeSection === 'notes' && <NotesList />}
+          {activeSection === 'knowledge' && <KnowledgeView />}
+        </div>
       </div>
     </div>
   );

@@ -1,148 +1,260 @@
-import { Button, Tag, Input, message, Popconfirm } from 'antd';
-import { useState } from 'react';
-import { approveApproval, rejectApproval } from '@/services/approval.service';
+import { Button, Tag, Input, message, Popconfirm, Space } from 'antd';
+import { useState, useEffect } from 'react';
+import { getApprovalHistory, getBusinessObject, withdrawApproval, remindApproval } from '@/services/workflow.service';
+import { useWorkflowStore } from '@/stores/useWorkflowStore';
+import { useAuthStore } from '@/stores/useAuthStore';
+import ApprovalChainView from '../ApprovalChainView';
+import AddSignerModal from './AddSignerModal';
+import type { ApprovalTaskVO, ApprovalCommentVO } from '@/services/workflow.service';
+import type { ChainStep } from '../ApprovalChainView';
 import styles from '../ApprovalPage.module.css';
 
 const { TextArea } = Input;
 
-interface Approval {
-  id: string;
-  type: string;
-  targetId: string;
-  targetType: string;
-  status: string;
-  applicantId: string;
-  approverId?: string;
-  comment?: string;
-  createdAt: string;
-}
+type ApprovalMode = 'single' | 'countersign' | 'orsign';
 
-const statusColors: Record<string, string> = {
-  pending: 'orange',
-  approved: 'green',
-  rejected: 'red',
+const objectTypeLabels: Record<string, string> = {
+  TASK: '任务',
+  BOM: 'BOM',
+  BOM_CHANGE: 'BOM变更',
+  PROCESS_ROUTE: '工艺路线',
+  PROCESS_CHANGE: '工艺变更',
+  FILE: '文件',
+  STAGE_GATE: '阶段门',
+  MILESTONE: '里程碑',
+  MODULE_SPEC: '模块规格',
+  SPEC_CHANGE: '规格变更',
+  PROJECT: '项目',
+  ISSUE: '问题',
+  RISK: '风险',
 };
 
-const statusLabels: Record<string, string> = {
-  pending: '待审批',
-  approved: '已通过',
-  rejected: '已拒绝',
-};
-
-const typeLabels: Record<string, string> = {
-  task_complete: '任务完成',
-  milestone: '里程碑',
-  bom_change: 'BOM变更',
-  process_publish: '工艺发布',
-  resource_borrow: '资源借用',
+const modeLabels: Record<ApprovalMode, { label: string; color: string; desc: string }> = {
+  single: { label: '单人审批', color: 'default', desc: '一人通过即可' },
+  countersign: { label: '会签', color: 'blue', desc: '所有审批人均需通过' },
+  orsign: { label: '或签', color: 'green', desc: '任一审批人通过即可' },
 };
 
 interface ApprovalDetailProps {
-  approval: Approval | null;
+  task: ApprovalTaskVO | null;
   onRefresh: () => void;
 }
 
-export default function ApprovalDetail({ approval, onRefresh }: ApprovalDetailProps) {
+export default function ApprovalDetail({ task, onRefresh }: ApprovalDetailProps) {
   const [rejectComment, setRejectComment] = useState('');
-  const [loading, setLoading] = useState(false);
+  const [addSignerOpen, setAddSignerOpen] = useState(false);
+  const [approvalMode, setApprovalMode] = useState<ApprovalMode>('single');
+  const [approvalHistory, setApprovalHistory] = useState<ApprovalCommentVO[]>([]);
+  const { completeTask, loading: storeLoading } = useWorkflowStore();
+  const currentUser = useAuthStore((s) => s.currentUser);
+  const currentUserId = currentUser?.id ?? '';
 
-  if (!approval) {
-    return <div className={styles.emptyHint}>请选择一条审批记录</div>;
-  }
+  useEffect(() => {
+    if (task?.businessObjectId) {
+      getApprovalHistory(task.businessObjectId)
+        .then((res) => {
+          const history = Array.isArray(res) ? res : (res as { data?: ApprovalCommentVO[] }).data || [];
+          setApprovalHistory(history);
+        })
+        .catch(() => setApprovalHistory([]));
 
-  const handleApprove = async () => {
-    setLoading(true);
+      getBusinessObject(task.businessObjectId)
+        .then((res) => {
+          const bo = (res as any)?.data ?? res;
+          if (bo?.approvalMode === 'countersign') setApprovalMode('countersign');
+          else if (bo?.approvalMode === 'orsign') setApprovalMode('orsign');
+          else setApprovalMode('single');
+        })
+        .catch(() => setApprovalMode('single'));
+    } else {
+      setApprovalHistory([]);
+      setApprovalMode('single');
+    }
+  }, [task?.businessObjectId]);
+
+  const loading = storeLoading;
+
+  const handleRemind = async () => {
+    if (!task?.businessObjectId) return;
     try {
-      await approveApproval(approval.id, 'current-user');
-      message.success('审批通过');
-      onRefresh();
+      await remindApproval(task.businessObjectId);
+      message.success('催办通知已发送');
     } catch {
-      message.error('审批失败');
-    } finally {
-      setLoading(false);
+      message.error('催办失败');
     }
   };
 
-  const handleReject = async () => {
+  const handleWithdraw = async () => {
+    if (!task?.businessObjectId) return;
+    try {
+      await withdrawApproval(task.businessObjectId);
+      message.success('已撤回审批');
+      onRefresh();
+    } catch {
+      message.error('撤回失败，可能您不是申请人');
+    }
+  };
+
+  if (!task) {
+    return <div className={styles.emptyHint}>请选择一条审批记录</div>;
+  }
+
+  const handleApprove = () => {
+    completeTask(task!.taskId, true).then(() => {
+      if (!useWorkflowStore.getState().error) {
+        message.success('审批通过');
+        onRefresh();
+      } else {
+        message.error('审批失败');
+      }
+    });
+  };
+
+  const handleReject = () => {
     if (!rejectComment.trim()) {
       message.warning('请输入拒绝原因');
       return;
     }
-    setLoading(true);
-    try {
-      await rejectApproval(approval.id, 'current-user', rejectComment);
-      message.success('已拒绝');
-      setRejectComment('');
-      onRefresh();
-    } catch {
-      message.error('操作失败');
-    } finally {
-      setLoading(false);
-    }
+    completeTask(task!.taskId, false, rejectComment).then(() => {
+      if (!useWorkflowStore.getState().error) {
+        message.success('已拒绝');
+        setRejectComment('');
+        onRefresh();
+      } else {
+        message.error('操作失败');
+      }
+    });
   };
 
-  const isPending = approval.status === 'pending';
+  const chainSteps: ChainStep[] = approvalHistory.map((h, i) => ({
+    id: String(h.id),
+    approvalId: String(task.businessObjectId),
+    stepOrder: i + 1,
+    approverId: h.approverName,
+    status: h.action === 'APPROVE' ? 'approved' : h.action === 'REJECT' ? 'rejected' : 'pending',
+    comment: h.comment,
+    actedAt: h.createdAt,
+  }));
 
   return (
     <div>
       <div className={styles.detailLabel}>审批类型</div>
-      <div className={styles.detailValue}>{typeLabels[approval.type] || approval.type}</div>
+      <div className={styles.detailValue}>{objectTypeLabels[task.objectType] || task.objectType}</div>
 
-      <div className={styles.detailLabel}>目标类型</div>
-      <div className={styles.detailValue}>{approval.targetType}</div>
+      <div className={styles.detailLabel}>名称</div>
+      <div className={styles.detailValue}>{task.objectName}</div>
 
-      <div className={styles.detailLabel}>目标ID</div>
-      <div className={styles.detailValue}>{approval.targetId}</div>
-
-      <div className={styles.detailLabel}>申请人</div>
-      <div className={styles.detailValue}>{approval.applicantId}</div>
-
-      <div className={styles.detailLabel}>审批人</div>
-      <div className={styles.detailValue}>{approval.approverId || '-'}</div>
-
-      <div className={styles.detailLabel}>状态</div>
-      <div className={styles.detailValue}>
-        <Tag color={statusColors[approval.status]}>{statusLabels[approval.status]}</Tag>
-      </div>
-
-      {approval.comment && (
+      {task.objectCode && (
         <>
-          <div className={styles.detailLabel}>备注</div>
-          <div className={styles.detailValue}>{approval.comment}</div>
+          <div className={styles.detailLabel}>编号</div>
+          <div className={styles.detailValue}>{task.objectCode}</div>
         </>
       )}
 
-      <div className={styles.detailLabel}>创建时间</div>
+      <div className={styles.detailLabel}>审批节点</div>
+      <div className={styles.detailValue}>{task.taskName}</div>
+
+      <div className={styles.detailLabel}>申请人</div>
+      <div className={styles.detailValue}>{task.applicantName || '-'}</div>
+
+      <div className={styles.detailLabel}>审批模式</div>
       <div className={styles.detailValue}>
-        {new Date(approval.createdAt).toLocaleString('zh-CN')}
+        <Space>
+          <Tag color={modeLabels[approvalMode].color}>{modeLabels[approvalMode].label}</Tag>
+          <span style={{ color: '#999', fontSize: 12 }}>{modeLabels[approvalMode].desc}</span>
+        </Space>
       </div>
 
-      {isPending && (
-        <div className={styles.actionButtons}>
+      <div className={styles.detailLabel}>创建时间</div>
+      <div className={styles.detailValue}>
+        {new Date(task.createdAt).toLocaleString('zh-CN')}
+      </div>
+
+      <div className={styles.actionButtons} style={{ flexDirection: 'column', gap: 12 }}>
+        <TextArea
+          rows={3}
+          placeholder="审批意见/拒绝原因（拒绝时必填）"
+          value={rejectComment}
+          onChange={(e) => setRejectComment(e.target.value)}
+          style={{ width: '100%' }}
+        />
+        <div style={{ display: 'flex', gap: 12 }}>
           <Popconfirm
             title="确认通过此审批？"
+            description="审批通过后将触发后续流程，请确认已审阅相关内容。"
             onConfirm={handleApprove}
-            okText="确认"
+            okText="确认通过"
             cancelText="取消"
+            okButtonProps={{ style: { backgroundColor: '#52c41a', borderColor: '#52c41a' } }}
           >
-            <Button type="primary" loading={loading}>
+            <Button
+              type="primary"
+              loading={loading}
+              style={{ backgroundColor: '#52c41a', borderColor: '#52c41a', fontWeight: 600 }}
+              size="large"
+            >
               通过
             </Button>
           </Popconfirm>
-          <div style={{ flex: 1 }}>
-            <TextArea
-              rows={2}
-              placeholder="拒绝原因（必填）"
-              value={rejectComment}
-              onChange={(e) => setRejectComment(e.target.value)}
-              style={{ marginBottom: 8 }}
-            />
-            <Button danger loading={loading} onClick={handleReject}>
+          <Popconfirm
+            title="确认拒绝此审批？"
+            description="拒绝后申请人需重新提交。"
+            onConfirm={handleReject}
+            okText="确认拒绝"
+            cancelText="取消"
+            okButtonProps={{ danger: true }}
+            disabled={!rejectComment.trim()}
+          >
+            <Button
+              danger
+              loading={loading}
+              size="large"
+              style={{ fontWeight: 600 }}
+              onClick={() => { if (!rejectComment.trim()) message.warning('请先输入拒绝原因'); }}
+            >
               拒绝
             </Button>
-          </div>
+          </Popconfirm>
+        </div>
+      </div>
+
+      <div style={{ marginTop: 12, display: 'flex', gap: 8 }}>
+        <Button onClick={handleRemind}>催办</Button>
+        <Button onClick={() => setAddSignerOpen(true)}>加签</Button>
+        <Popconfirm
+          title="确认撤回此审批？"
+          description="撤回后需重新提交审批。"
+          onConfirm={handleWithdraw}
+          okText="确认撤回"
+          cancelText="取消"
+        >
+          <Button>撤回</Button>
+        </Popconfirm>
+      </div>
+
+      {chainSteps.length > 0 && (
+        <div style={{ marginTop: 16 }}>
+          <ApprovalChainView
+            approvalId={String(task.businessObjectId)}
+            taskId={task.taskId}
+            chainSteps={chainSteps}
+            currentUserId={String(currentUserId)}
+            onRefresh={onRefresh}
+            showActions={false}
+          />
         </div>
       )}
+
+      <AddSignerModal
+        open={addSignerOpen}
+        businessObjectId={task.businessObjectId}
+        taskId={task.taskId}
+        onClose={() => setAddSignerOpen(false)}
+        onSuccess={() => {
+          setAddSignerOpen(false);
+          onRefresh();
+        }}
+      />
     </div>
   );
 }

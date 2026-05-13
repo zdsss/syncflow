@@ -2,15 +2,19 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+  height: 100%;
+  overflow: hidden;
+  padding: 16px;
+  box-sizing: border-box;
 }
 
 .topBar {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  background: var(--color-bg-card, #fff);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: var(--shadow-1, 0 2px 8px rgba(0,0,0,0.08));
   padding: 12px 16px;
 }
 
@@ -27,13 +31,13 @@
 
 .completionLabel {
   font-size: 13px;
-  color: #666;
+  color: var(--color-text-secondary, #666);
   white-space: nowrap;
 }
 
 .board {
   display: flex;
-  gap: 12px;
+  gap: 16px;
   overflow-x: auto;
   padding-bottom: 8px;
   flex: 1;
@@ -44,14 +48,17 @@
   flex: 1;
   min-width: 200px;
   max-width: 280px;
-  background: #F5F7FA;
-  border-radius: 8px;
+  background: var(--color-bg-page, #F5F7FA);
+  border-radius: var(--radius-md, 8px);
   display: flex;
   flex-direction: column;
+  border-left: 3px solid var(--color-border, #E8E8E8);
+  transition: border-color 0.2s;
 }
 
 .columnOver {
-  background: #EBF0FF;
+  background: var(--color-primary-1, #EBF0FF);
+  border-left-color: var(--color-primary-5, #3366FF);
 }
 
 .columnHeader {
@@ -64,12 +71,12 @@
 .columnTitle {
   font-size: 13px;
   font-weight: 500;
-  color: #333;
+  color: var(--color-text-primary, #333);
 }
 
 .columnCount {
   font-size: 12px;
-  color: #999;
+  color: var(--color-text-placeholder, #999);
 }
 
 .columnBody {
@@ -88,41 +95,42 @@
   justify-content: center;
   height: 80px;
   font-size: 12px;
-  color: #ccc;
+  color: var(--color-text-disabled, #ccc);
 }
 
-/* Card */
+/* Card: 8px radius, subtle shadow, hover lift */
 .card {
-  background: #fff;
-  border-radius: 8px;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  background: var(--color-bg-card, #fff);
+  border-radius: var(--radius-md, 8px);
+  box-shadow: var(--shadow-1, 0 2px 8px rgba(0,0,0,0.08));
   padding: 10px 12px;
-  border-left: 3px solid #8C8C8C;
+  border-left: 3px solid var(--color-pending, #8C8C8C);
   cursor: grab;
-  transition: box-shadow 0.2s;
+  transition: box-shadow 0.2s, transform 0.2s;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
 .card:hover {
-  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+  box-shadow: var(--shadow-2, 0 4px 16px rgba(0,0,0,0.12));
+  transform: translateY(-2px);
 }
 
 .cardOverlay {
-  box-shadow: 0 8px 24px rgba(0,0,0,0.16);
+  box-shadow: var(--shadow-3, 0 8px 24px rgba(0,0,0,0.16));
   cursor: grabbing;
   transform: rotate(2deg);
 }
 
 .cardDate {
   font-size: 11px;
-  color: #999;
+  color: var(--color-text-placeholder, #999);
 }
 
 .cardTitle {
-  font-size: 13px;
-  color: #333;
+  font-size: 14px;
+  color: var(--color-text-primary, #333);
   line-height: 1.4;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -139,7 +147,7 @@
 .priorityTag {
   font-size: 11px;
   padding: 1px 8px;
-  border-radius: 100px;
+  border-radius: var(--radius-full, 100px);
   line-height: 18px;
 }
 
@@ -147,8 +155,8 @@
   width: 24px;
   height: 24px;
   border-radius: 50%;
-  background: #EBF0FF;
-  color: #3366FF;
+  background: var(--color-primary-1, #EBF0FF);
+  color: var(--color-primary-5, #3366FF);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -158,4 +166,10 @@
 
 .dragging {
   opacity: 0.3;
+}
+
+.dueDate {
+  font-size: 11px;
+  color: var(--color-text-placeholder, #999);
+  margin-top: 2px;
 }

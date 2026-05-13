@@ -1,0 +1,23 @@
+{
+  "projectFiles": "Project Files",
+  "uploadFile": "Upload File",
+  "newFolder": "New Folder",
+  "all": "All",
+  "document": "Document",
+  "image": "Image",
+  "code": "Code",
+  "fileName": "File Name",
+  "fileSize": "Size",
+  "uploadTime": "Upload Time",
+  "uploader": "Uploader",
+  "storage": "Storage",
+  "download": "Download",
+  "preview": "Preview",
+  "rename": "Rename",
+  "move": "Move",
+  "copy": "Copy",
+  "share": "Share",
+  "version": "Version",
+  "fileType": "File Type",
+  "dragUpload": "Drag files here to upload"
+}

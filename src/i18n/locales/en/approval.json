@@ -1,0 +1,19 @@
+{
+  "approval": {
+    "title": "Approval Management",
+    "submit": "Submit for Approval",
+    "approve": "Approve",
+    "reject": "Reject",
+    "pending": "Pending",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "comment": "Approval Comment",
+    "flow": "Approval Flow",
+    "node": "Approval Node",
+    "status": "Approval Status",
+    "history": "Approval History",
+    "assignee": "Approver",
+    "autoCreated": "Approval flow has been automatically created",
+    "confirmSubmit": "Confirm submission for approval?"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "title": "工艺管理",
+  "routes": "工艺路线",
+  "steps": "工序列表",
+  "addRoute": "新建工艺路线",
+  "addStep": "添加工序",
+  "edit": "编辑",
+  "delete": "删除",
+  "name": "名称",
+  "description": "描述",
+  "status": "状态",
+  "version": "版本",
+  "parameters": "工艺参数",
+  "files": "工艺文件",
+  "sop": "SOP",
+  "processCard": "工艺卡",
+  "inspection": "检验标准",
+  "controlPlan": "控制计划"
+}

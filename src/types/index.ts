@@ -6,3 +6,5 @@ export * from './department';
 export * from './role';
 export * from './file';
 export * from './common';
+export * from './page';
+export * from './api';

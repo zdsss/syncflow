@@ -1,34 +1,58 @@
+/**
+ * @deprecated Static phase enum - prefer dynamic ProjectPhaseData from API.
+ * Java backend stores phases in prj_phase table, not static enum.
+ */
 export enum ProjectPhase {
-  SURVEY = 'survey',
-  CONCEPT = 'concept',
-  PLANNING = 'planning',
-  DEVELOPMENT = 'development',
-  TESTING = 'testing',
-  MASS_PRODUCTION = 'mass_production',
+  SURVEY = 1,
+  CONCEPT = 2,
+  PLANNING = 3,
+  DEVELOPMENT = 4,
+  TESTING = 5,
+  MASS_PRODUCTION = 6,
+}
+
+/** Dynamic project phase data from API (prj_phase table) */
+export interface ProjectPhaseData {
+  id: number;
+  projectId: number;
+  name: string;
+  code: string;
+  seqNo: number;
+  status: number;
+  progress: number;
+  plannedStart?: string;
+  plannedEnd?: string;
+  actualStart?: string;
+  actualEnd?: string;
 }
 
 export enum ProjectStatus {
-  NOT_STARTED = 'not_started',
-  IN_PROGRESS = 'in_progress',
-  COMPLETED = 'completed',
-  DELAYED = 'delayed',
+  CANCELLED = 0,
+  NOT_STARTED = 1,
+  IN_PROGRESS = 2,
+  COMPLETED = 3,
+  DELAYED = 4,
 }
 
 export interface Project {
-  id: string;
+  id: number;
+  code?: string;
   name: string;
   description?: string;
-  parentId?: string | null;
-  category: string;
-  phase: ProjectPhase;
+  parentId?: number | null;
+  projectType?: string;
+  priority?: number;
   status: ProjectStatus;
-  leaderId: string;
-  startDate: string;
-  endDate: string;
-  actualStartDate?: string;
-  actualEndDate?: string;
-  completion: number;
-  budget?: number;
+  ownerId: number;
+  ownerName?: string;
+  plannedStart: string;
+  plannedEnd: string;
+  actualStart?: string;
+  actualEnd?: string;
+  progress: number;
+  parentPath?: string;
+  flowInstanceId?: string;
+  children?: Project[];
   createdAt: string;
   updatedAt: string;
 }

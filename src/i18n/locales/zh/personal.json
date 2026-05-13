@@ -1,0 +1,18 @@
+{
+  "title": "个人文件夹",
+  "allFiles": "全部文件",
+  "myNotes": "我的笔记",
+  "favorites": "收藏文件",
+  "drafts": "草稿箱",
+  "upload": "上传文件",
+  "search": "搜索文件",
+  "delete": "删除",
+  "fileName": "文件名",
+  "type": "类型",
+  "size": "大小",
+  "createdAt": "创建时间",
+  "actions": "操作",
+  "totalFiles": "文件总数",
+  "totalNotes": "笔记数",
+  "totalFavorites": "已收藏"
+}

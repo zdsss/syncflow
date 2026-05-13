@@ -4,12 +4,21 @@ package-lock.json
 
 # Build output
 dist/
+coverage/
+
+# Java / Spring Boot
+syncflow-java/**/target/
+syncflow-java/**/*.class
+syncflow-java/.mvn/
+*.jar
+*.war
 
 # IDE
 .idea/
 .vscode/
 *.swp
 *.swo
+*.iml
 
 # OS
 .DS_Store

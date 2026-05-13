@@ -1,0 +1,23 @@
+{
+  "configMgmt": "配置管理",
+  "rolePermission": "角色权限",
+  "memberMgmt": "成员管理",
+  "notificationSettings": "通知设置",
+  "department": "部门",
+  "role": "角色",
+  "addMember": "添加成员",
+  "removeMember": "移除成员",
+  "taskReminder": "任务提醒",
+  "emailNotification": "邮件通知",
+  "appNotification": "应用内通知",
+  "permission": "权限",
+  "roleName": "角色名称",
+  "memberName": "成员名称",
+  "memberEmail": "成员邮箱",
+  "operation": "操作",
+  "editRole": "编辑角色",
+  "createRole": "创建角色",
+  "systemSettings": "系统设置",
+  "security": "安全设置",
+  "auditLog": "操作日志"
+}

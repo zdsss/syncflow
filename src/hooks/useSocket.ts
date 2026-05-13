@@ -1,42 +1,73 @@
-import { useEffect, useRef, useState, useCallback } from 'react';
-import { io, Socket } from 'socket.io-client';
+import { useEffect, useRef, useCallback, useState } from 'react';
+import { Client, IMessage } from '@stomp/stompjs';
+import SockJS from 'sockjs-client';
 
-const SOCKET_URL = 'http://localhost:3000';
+type MessageHandler = (payload: any) => void;
 
-export function useSocket() {
-  const socketRef = useRef<Socket | null>(null);
+interface UseSocketReturn {
+  connected: boolean;
+  subscribe: (destination: string, handler: MessageHandler) => () => void;
+  unsubscribe: (destination: string) => void;
+}
+
+export function useSocket(): UseSocketReturn {
+  const clientRef = useRef<Client | null>(null);
   const [connected, setConnected] = useState(false);
-  const [lastEvent, setLastEvent] = useState<{ name: string; data: any } | null>(null);
+  const subscriptionsRef = useRef<Map<string, { unsubscribe: () => void }>>(new Map());
 
   useEffect(() => {
-    const socket = io(SOCKET_URL, {
-      transports: ['websocket'],
-      autoConnect: true,
+    const token = localStorage.getItem('token') || '';
+
+    const client = new Client({
+      webSocketFactory: () => new SockJS('/ws'),
+      connectHeaders: {
+        Authorization: `Bearer ${token}`,
+      },
+      reconnectDelay: 5000,
+      heartbeatIncoming: 4000,
+      heartbeatOutgoing: 4000,
+      onConnect: () => {
+        setConnected(true);
+      },
+      onDisconnect: () => {
+        setConnected(false);
+      },
+      onStompError: (frame) => {
+        console.error('[WS] STOMP Error:', frame.headers['message']);
+        setConnected(false);
+      },
     });
 
-    socketRef.current = socket;
-
-    socket.on('connect', () => setConnected(true));
-    socket.on('disconnect', () => setConnected(false));
-
-    const trackedEvents = ['task:status-changed', 'task:assigned', 'notification:new', 'approval:updated'];
-    trackedEvents.forEach((event) => {
-      socket.on(event, (data: any) => {
-        setLastEvent({ name: event, data });
-      });
-    });
+    client.activate();
+    clientRef.current = client;
 
     return () => {
-      socket.disconnect();
+      subscriptionsRef.current.forEach(sub => sub.unsubscribe());
+      subscriptionsRef.current.clear();
+      client.deactivate();
     };
   }, []);
 
-  const on = useCallback((event: string, handler: (data: any) => void) => {
-    socketRef.current?.on(event, handler);
-    return () => {
-      socketRef.current?.off(event, handler);
-    };
+  const subscribe = useCallback((destination: string, handler: MessageHandler): () => void => {
+    const client = clientRef.current;
+    if (!client?.connected) return () => {};
+
+    const subscription = client.subscribe(destination, (message: IMessage) => {
+      try {
+        handler(JSON.parse(message.body));
+      } catch {
+        handler(message.body);
+      }
+    });
+
+    subscriptionsRef.current.set(destination, subscription);
+    return () => subscription.unsubscribe();
   }, []);
 
-  return { connected, lastEvent, on };
+  const unsubscribe = useCallback((destination: string) => {
+    subscriptionsRef.current.get(destination)?.unsubscribe();
+    subscriptionsRef.current.delete(destination);
+  }, []);
+
+  return { connected, subscribe, unsubscribe };
 }

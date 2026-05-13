@@ -2,24 +2,36 @@ import type React from 'react';
 import { useMemo } from 'react';
 import dayjs from 'dayjs';
 import type { Project } from '@/types';
-import { PROJECT_STATUS_CONFIG } from '@/constants';
+import { ProjectStatus } from '@/types';
+import { PROJECT_STATUS_CONFIG } from '@/constants/enums';
 import styles from './ProjectGanttTab.module.css';
 
 interface ProjectGanttTabProps {
   projects: Project[];
   onProjectClick?: (project: Project) => void;
+  onCollapseAll?: () => void;
 }
 
-const STATUS_BAR_COLORS: Record<string, string> = {
-  in_progress: '#3366FF',
-  not_started: '#BFBFBF',
-  completed: '#52C41A',
-  delayed: '#FF4D4F',
+const STATUS_BAR_GRADIENT: Record<number, string> = {
+  [ProjectStatus.CANCELLED]: '#BFBFBF',
+  [ProjectStatus.IN_PROGRESS]: 'linear-gradient(180deg, #4C8BF5 0%, #3366FF 100%)',
+  [ProjectStatus.NOT_STARTED]: '#BFBFBF',
+  [ProjectStatus.COMPLETED]: '#52C41A',
+  [ProjectStatus.DELAYED]: '#FF4D4F',
 };
 
-export default function ProjectGanttTab({ projects, onProjectClick }: ProjectGanttTabProps) {
-  const startYear = 2025;
-  const monthCount = 24;
+const STATUS_BAR_COLORS: Record<number, string> = {
+  [ProjectStatus.CANCELLED]: '#BFBFBF',
+  [ProjectStatus.IN_PROGRESS]: '#3366FF',
+  [ProjectStatus.NOT_STARTED]: '#BFBFBF',
+  [ProjectStatus.COMPLETED]: '#52C41A',
+  [ProjectStatus.DELAYED]: '#FF4D4F',
+};
+
+export default function ProjectGanttTab({ projects, onProjectClick, onCollapseAll }: ProjectGanttTabProps) {
+  const currentYear = new Date().getFullYear();
+  const startYear = currentYear;
+  const monthCount = (currentYear + 2 - startYear) * 12 - new Date().getMonth();
   const colWidth = 80;
 
   const monthColumns = useMemo(() => {
@@ -30,7 +42,7 @@ export default function ProjectGanttTab({ projects, onProjectClick }: ProjectGan
       cols.push({ key: m.format('YYYY-MM'), label: m.format('M月'), yearLabel: m.format('YYYY') });
     }
     return cols;
-  }, []);
+  }, [startYear, monthCount]);
 
   const yearGroups = useMemo(() => {
     const groups: { year: string; count: number }[] = [];
@@ -55,9 +67,9 @@ export default function ProjectGanttTab({ projects, onProjectClick }: ProjectGan
   const totalWidth = monthCount * colWidth;
 
   const getBarForProject = (project: Project) => {
-    if (!project.startDate || !project.endDate) return null;
-    const s = dayjs(project.startDate);
-    const e = dayjs(project.endDate);
+    if (!project.plannedStart || !project.plannedEnd) return null;
+    const s = dayjs(project.plannedStart);
+    const e = dayjs(project.plannedEnd);
     if (e.isBefore(timelineStart) || s.isAfter(timelineEnd)) return null;
     const startOffset = Math.max(0, s.diff(timelineStart, 'day'));
     const endOffset = Math.min(totalDays, e.diff(timelineStart, 'day'));
@@ -73,8 +85,8 @@ export default function ProjectGanttTab({ projects, onProjectClick }: ProjectGan
     let earliest = dayjs('2099-01-01');
     let latest = dayjs('2000-01-01');
     for (const p of projects) {
-      if (p.startDate && dayjs(p.startDate).isBefore(earliest)) earliest = dayjs(p.startDate);
-      if (p.endDate && dayjs(p.endDate).isAfter(latest)) latest = dayjs(p.endDate);
+      if (p.plannedStart && dayjs(p.plannedStart).isBefore(earliest)) earliest = dayjs(p.plannedStart);
+      if (p.plannedEnd && dayjs(p.plannedEnd).isAfter(latest)) latest = dayjs(p.plannedEnd);
     }
     const startOffset = Math.max(0, earliest.diff(timelineStart, 'day'));
     const endOffset = Math.min(totalDays, latest.diff(timelineStart, 'day'));
@@ -84,7 +96,14 @@ export default function ProjectGanttTab({ projects, onProjectClick }: ProjectGan
     };
   }, [projects, timelineStart, totalDays, totalWidth]);
 
-  const ganttProjects = projects.filter((p) => p.startDate && p.endDate);
+  const ganttProjects = projects.filter((p) => p.plannedStart && p.plannedEnd);
+
+  // Current month highlight position
+  const now = dayjs();
+  const currentMonthIndex = now.diff(timelineStart, 'month');
+  const currentMonthHighlight = currentMonthIndex >= 0 && currentMonthIndex < monthCount
+    ? { left: currentMonthIndex * colWidth, width: colWidth }
+    : null;
 
   return (
     <div className={styles.container}>
@@ -92,7 +111,7 @@ export default function ProjectGanttTab({ projects, onProjectClick }: ProjectGan
         {/* Left department tree */}
         <div className={styles.leftPanel}>
           <div className={styles.leftHeader}>
-            <span className={styles.collapseAll}>全部收起</span>
+            <span className={styles.leftHeaderTitle}>项目名称</span>
           </div>
           {ganttProjects.map((project) => {
             const statusCfg = PROJECT_STATUS_CONFIG[project.status];
@@ -107,8 +126,19 @@ export default function ProjectGanttTab({ projects, onProjectClick }: ProjectGan
 
         {/* Right gantt */}
         <div className={styles.ganttArea}>
+          <div className={styles.ganttAreaHeader}>
+            <span className={styles.collapseAll} onClick={onCollapseAll} data-testid="collapse-all">全部收起</span>
+          </div>
           <div className={styles.ganttScroll}>
             <div className={styles.ganttInner}>
+              {/* Current month highlight */}
+              {currentMonthHighlight && (
+                <div
+                  className={styles.currentMonthHighlight}
+                  style={{ left: currentMonthHighlight.left, width: currentMonthHighlight.width }}
+                  data-testid="current-month-highlight"
+                />
+              )}
               {/* Year header */}
               <div className={styles.yearHeader}>
                 {yearGroups.map((yg) => (
@@ -130,6 +160,7 @@ export default function ProjectGanttTab({ projects, onProjectClick }: ProjectGan
                 {ganttProjects.map((project) => {
                   const bar = getBarForProject(project);
                   const barColor = STATUS_BAR_COLORS[project.status] || '#BFBFBF';
+                  const barGradient = STATUS_BAR_GRADIENT[project.status] || barColor;
                   return (
                     <div
                       key={project.id}
@@ -142,11 +173,11 @@ export default function ProjectGanttTab({ projects, onProjectClick }: ProjectGan
                       {bar && (
                         <div
                           className={styles.ganttBar}
-                          style={{ left: bar.left, width: bar.width, backgroundColor: barColor }}
-                          title={`${project.name} ${project.startDate} ~ ${project.endDate}`}
+                          style={{ left: bar.left, width: bar.width, background: barGradient }}
+                          title={`${project.name} ${project.plannedStart} ~ ${project.plannedEnd}`}
                         >
                           <span className={styles.barLabel}>
-                            {project.name} {dayjs(project.startDate).format('MM/DD')}-{dayjs(project.endDate).format('MM/DD')}
+                            {project.name} {dayjs(project.plannedStart).format('MM/DD')}-{dayjs(project.plannedEnd).format('MM/DD')}
                           </span>
                         </div>
                       )}

@@ -1,51 +1,73 @@
-import { Table, Button, Popconfirm, Space } from 'antd';
+import { Table, Button, Popconfirm, Space, Tag, Descriptions } from 'antd';
 import { DeleteOutlined } from '@ant-design/icons';
 
 interface BomItem {
-  id: string;
+  id: number;
+  bomId: number;
+  parentId?: number | null;
   name: string;
-  partNumber?: string;
+  materialCode?: string;
   specification?: string;
-  supplier?: string;
-  unit?: string;
-  unitPrice?: number;
+  drawingNo?: string;
+  material?: string;
+  surfaceTreatment?: string;
+  sourceType?: string;
   quantity: number;
-  version: number;
+  weight?: number;
+  totalWeight?: number;
+  unitOfMeasure?: string;
+  isVirtual?: boolean;
+  storageLocation?: string;
+  isOptional?: boolean;
+  remark?: string;
+  level?: number;
+  levelNo?: string;
+  seqNo?: number;
+  children?: BomItem[];
 }
 
 interface BomTableProps {
   items: BomItem[];
   selectedItem: BomItem | null;
-  onUpdate: (id: string, data: Partial<BomItem>) => void;
-  onDelete: (id: string) => void;
+  onUpdate: (id: number, data: Partial<BomItem>) => void;
+  onDelete: (id: number) => void;
 }
 
+const SOURCE_TYPE_MAP: Record<string, { label: string; color: string }> = {
+  MADE: { label: '自制', color: 'blue' },
+  PURCHASED: { label: '外购', color: 'green' },
+  BUY: { label: '外购', color: 'green' },
+  SUBCONTRACT: { label: '外协', color: 'orange' },
+};
+
 export default function BomTable({ items, selectedItem, onDelete }: BomTableProps) {
-  const displayItems = selectedItem ? [selectedItem] : items;
+  const displayItems = items;
 
   const columns = [
-    { title: '名称', dataIndex: 'name', key: 'name' },
-    { title: '料号', dataIndex: 'partNumber', key: 'partNumber' },
-    { title: '规格', dataIndex: 'specification', key: 'specification' },
-    { title: '供应商', dataIndex: 'supplier', key: 'supplier' },
-    { title: '单位', dataIndex: 'unit', key: 'unit' },
+    { title: '层级', dataIndex: 'levelNo', key: 'levelNo', width: 70, render: (v: string) => v || '-' },
+    { title: '物料编码', dataIndex: 'materialCode', key: 'materialCode', width: 130, render: (v: string) => v || '-' },
+    { title: '物料名称', dataIndex: 'name', key: 'name', ellipsis: true },
+    { title: '规格', dataIndex: 'specification', key: 'specification', width: 140, ellipsis: true, render: (v: string) => v || '-' },
+    { title: '用量', dataIndex: 'quantity', key: 'quantity', width: 70 },
+    { title: '单位', dataIndex: 'unitOfMeasure', key: 'unitOfMeasure', width: 60, render: (v: string) => v || '-' },
     {
-      title: '单价',
-      dataIndex: 'unitPrice',
-      key: 'unitPrice',
-      render: (v: number) => (v != null ? `¥${v.toFixed(2)}` : '-'),
+      title: '来源',
+      dataIndex: 'sourceType',
+      key: 'sourceType',
+      width: 80,
+      render: (v: string) => {
+        const cfg = SOURCE_TYPE_MAP[v];
+        return cfg ? <Tag color={cfg.color}>{cfg.label}</Tag> : (v || '-');
+      },
     },
-    { title: '数量', dataIndex: 'quantity', key: 'quantity' },
-    { title: '版本', dataIndex: 'version', key: 'version' },
     {
       title: '操作',
       key: 'action',
+      width: 60,
       render: (_: any, record: BomItem) => (
-        <Space>
-          <Popconfirm title="确认删除?" onConfirm={() => onDelete(record.id)}>
-            <Button type="link" danger icon={<DeleteOutlined />} />
-          </Popconfirm>
-        </Space>
+        <Popconfirm title="确认删除?" onConfirm={() => onDelete(record.id)}>
+          <Button type="link" danger size="small" icon={<DeleteOutlined />} />
+        </Popconfirm>
       ),
     },
   ];
@@ -57,6 +79,24 @@ export default function BomTable({ items, selectedItem, onDelete }: BomTableProp
       rowKey="id"
       size="small"
       pagination={false}
+      childrenColumnName="__no_tree__"
+      rowClassName={(record) => record.id === selectedItem?.id ? 'ant-table-row-selected' : ''}
+      expandable={{
+        expandedRowRender: (record: BomItem) => (
+          <Descriptions size="small" column={4} data-testid={`expand-detail-${record.id}`}>
+            <Descriptions.Item label="图号">{record.drawingNo || '-'}</Descriptions.Item>
+            <Descriptions.Item label="材料">{record.material || '-'}</Descriptions.Item>
+            <Descriptions.Item label="表面处理">{record.surfaceTreatment || '-'}</Descriptions.Item>
+            <Descriptions.Item label="重量(kg)">{record.weight != null ? record.weight.toFixed(2) : '-'}</Descriptions.Item>
+            <Descriptions.Item label="总计重量">{record.totalWeight != null ? record.totalWeight.toFixed(2) : '-'}</Descriptions.Item>
+            <Descriptions.Item label="库位">{record.storageLocation || '-'}</Descriptions.Item>
+            <Descriptions.Item label="虚拟件">{record.isVirtual ? <Tag color="purple">是</Tag> : '否'}</Descriptions.Item>
+            <Descriptions.Item label="可选件">{record.isOptional ? '是' : '否'}</Descriptions.Item>
+            {record.remark && <Descriptions.Item label="备注" span={4}>{record.remark}</Descriptions.Item>}
+          </Descriptions>
+        ),
+        rowExpandable: () => true,
+      }}
     />
   );
 }

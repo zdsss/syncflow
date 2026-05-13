@@ -1,0 +1,256 @@
+.container {
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Time axis header */
+.timeAxis {
+  display: flex;
+  border-bottom: 2px solid #E8E8E8;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #fff;
+}
+
+.laneLabelHeader {
+  width: 120px;
+  min-width: 120px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  color: #333;
+  background: #E8F4FD;
+  border-right: 2px solid #E8E8E8;
+}
+
+.monthHeaderRow {
+  display: flex;
+  flex: 1;
+  overflow-x: auto;
+}
+
+.monthCell {
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 500;
+  color: #333;
+  background: #E8F4FD;
+  border-right: 1px solid var(--color-border, #E8E8E8);
+  flex-shrink: 0;
+}
+
+/* Swimlane rows */
+.swimlanes {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 0;
+}
+
+.swimlane {
+  display: flex;
+  position: relative;
+  border-bottom: 1px solid #F0F0F0;
+}
+
+/* Lane label (left side) */
+.laneLabel {
+  width: 120px;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  border-right: 2px solid #E8E8E8;
+  background: #FAFAFA;
+  padding: 8px 4px;
+}
+
+.laneLabelText {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.laneBadge {
+  /* uses antd Badge */
+}
+
+/* Lane content area */
+.laneContent {
+  flex: 1;
+  overflow-x: auto;
+  overflow-y: visible;
+  position: relative;
+}
+
+/* Month grid lines within lane */
+.monthGridLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-right: 1px solid #F0F0F0;
+}
+
+/* Task card positioned in lane */
+.cardPositioned {
+  position: absolute;
+  height: 40px;
+  z-index: 1;
+}
+
+/* Milestone diamond marker */
+.milestoneMarker {
+  width: 16px;
+  height: 16px;
+  transform: rotate(45deg);
+  border-radius: 2px;
+  cursor: pointer;
+  transition: transform 0.2s;
+  margin: auto;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin-top: -8px;
+  margin-left: -8px;
+}
+
+.milestoneMarker:hover {
+  transform: rotate(45deg) scale(1.2);
+}
+
+/* Today line */
+.todayLine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background-color: #FF4D4F;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.todayMarker {
+  position: absolute;
+  top: -18px;
+  left: -14px;
+  font-size: 10px;
+  color: #FF4D4F;
+  white-space: nowrap;
+  font-weight: 600;
+}
+
+/* Task card */
+.taskCard {
+  width: 100%;
+  height: 100%;
+  background: #fff;
+  border: 1px solid var(--color-border, #E8E8E8);
+  border-radius: 6px;
+  padding: 6px 8px 6px 16px;
+  cursor: pointer;
+  transition: box-shadow 0.2s, border-color 0.2s;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  position: relative;
+  overflow: hidden;
+}
+
+.taskCard:hover {
+  box-shadow: 0 2px 8px rgba(0,0,0,0.12);
+  border-color: #91D5FF;
+}
+
+/* Blue dot indicator on card */
+.cardDot {
+  position: absolute;
+  left: 6px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.cardContent {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-left: 4px;
+}
+
+.taskName {
+  font-size: 12px;
+  font-weight: 500;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.cardMeta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+}
+
+/* Empty lane */
+.emptyLane {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  color: #BFBFBF;
+  font-size: 13px;
+}
+
+/* Separator line between lanes */
+.separatorLine {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #E8E8E8;
+  z-index: 1;
+}
+
+/* Responsive */
+@media (max-width: 1024px) {
+  .laneLabelHeader,
+  .laneLabel {
+    width: 90px;
+    min-width: 90px;
+  }
+
+  .laneLabelText {
+    font-size: 12px;
+  }
+
+  .swimlanes {
+    -webkit-overflow-scrolling: touch;
+  }
+}
+
+@media (max-width: 768px) {
+  .laneLabelHeader,
+  .laneLabel {
+    width: 70px;
+    min-width: 70px;
+    font-size: 11px;
+  }
+
+  .laneLabel {
+    padding: 6px 2px;
+  }
+}

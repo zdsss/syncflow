@@ -1,0 +1,12 @@
+{
+  "required": "此项为必填项",
+  "emailInvalid": "请输入有效的邮箱地址",
+  "passwordMin": "密码长度不能少于6位",
+  "passwordMismatch": "两次输入的密码不一致",
+  "nameRequired": "请输入姓名",
+  "selectRequired": "请选择",
+  "dateRequired": "请选择日期",
+  "numberInvalid": "请输入有效的数字",
+  "minValue": "不能小于最小值",
+  "maxValue": "不能超过最大值"
+}

@@ -1,0 +1,19 @@
+{
+  "title": "General Resources",
+  "human": "Human Resources",
+  "equipment": "Equipment",
+  "supplier": "Suppliers",
+  "add": "Add Resource",
+  "edit": "Edit",
+  "delete": "Delete",
+  "borrow": "Borrow Request",
+  "search": "Search Resources",
+  "name": "Name",
+  "description": "Description",
+  "tags": "Tags",
+  "status": "Status",
+  "available": "Available",
+  "busy": "Busy",
+  "unavailable": "Unavailable",
+  "maintenance": "Maintenance"
+}

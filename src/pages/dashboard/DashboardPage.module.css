@@ -1,21 +1,189 @@
 .page {
   display: flex;
   flex-direction: column;
-  gap: 12px;
   height: 100%;
   overflow: hidden;
+  background: var(--color-bg-layout, #F5F5F5);
+  position: relative;
 }
 
-.header {
+/* ── Top bar ─────────────────────────────────────────────────── */
+.topBar {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  background: var(--color-bg-card, #fff);
+  border-bottom: 1px solid var(--color-border, #E8E8E8);
+  padding: 0 16px;
+  height: 52px;
+  flex-shrink: 0;
+  gap: 16px;
+}
+
+.topLeft {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   flex-shrink: 0;
 }
 
-.title {
-  font-size: 22px;
+.avatarFallback {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-primary-1, #EBF0FF);
+  color: var(--color-primary-5, #3366FF);
   font-weight: 600;
-  color: #1A1A1A;
-  line-height: 30px;
+  font-size: 13px;
+  line-height: 32px;
+}
+
+.userName {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-title, #1A1A1A);
+  white-space: nowrap;
+}
+
+.topRight {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+}
+
+/* ── Main area ───────────────────────────────────────────────── */
+.mainArea {
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ── Overview grid (概览选项卡内容) ─────────────────────────── */
+.overviewGrid {
+  height: 100%;
+  overflow-y: auto;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  box-sizing: border-box;
+}
+
+.overviewRow {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.overviewCol {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ── Loading overlay ─────────────────────────────────────────── */
+.loadingOverlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.7);
+  z-index: 10;
+}
+
+/* ── Fullscreen mode ─────────────────────────────────────────── */
+:global(body.dashboard-fullscreen) {
+  overflow: hidden;
+}
+
+:global(body.dashboard-fullscreen) :global(.app-sidebar) {
+  display: none !important;
+}
+
+:global(body.dashboard-fullscreen) :global(.app-layout) {
+  margin-left: 0 !important;
+}
+
+/* ── Responsive ─────────────────────────────────────────────── */
+@media (max-width: 1280px) {
+  .overviewRow {
+    flex-wrap: wrap;
+  }
+
+  .overviewCol {
+    flex: 1 1 calc(50% - 6px);
+    min-width: calc(50% - 6px);
+  }
+}
+
+@media (max-width: 1024px) {
+  .mainArea {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    min-width: 0;
+  }
+
+  .topBar {
+    flex-wrap: wrap;
+    height: auto;
+    min-height: 52px;
+    padding: 8px 16px;
+  }
+
+  .topBar button {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  .topRight {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .overviewRow {
+    flex-wrap: wrap;
+  }
+
+  .overviewCol {
+    flex: 1 1 calc(50% - 6px);
+    min-width: calc(50% - 6px);
+  }
+}
+
+@media (max-width: 768px) {
+  .topBar {
+    padding: 8px 12px;
+    padding-left: 48px;
+    height: auto;
+    min-height: 48px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  .mainArea {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    min-width: 0;
+  }
+
+  .overviewGrid {
+    padding: 12px;
+  }
+
+  .overviewRow {
+    flex-direction: column;
+  }
+
+  .overviewCol {
+    flex: 1 1 100%;
+    min-width: 100%;
+  }
+
+  .topRight {
+    width: 100%;
+    justify-content: flex-end;
+  }
 }

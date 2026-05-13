@@ -1,0 +1,18 @@
+{
+  "title": "知识管理",
+  "articles": "文章",
+  "categories": "分类",
+  "tags": "标签",
+  "search": "搜索知识库",
+  "create": "新建文章",
+  "edit": "编辑",
+  "delete": "删除",
+  "publish": "发布",
+  "draft": "草稿",
+  "archived": "已归档",
+  "views": "阅读量",
+  "comments": "评论",
+  "version": "版本",
+  "createdAt": "创建时间",
+  "updatedAt": "更新时间"
+}

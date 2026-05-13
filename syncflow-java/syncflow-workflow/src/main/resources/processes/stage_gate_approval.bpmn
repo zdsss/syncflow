@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<definitions xmlns="http://www.omg.org/spec/BPMN/20100524/MODEL"
+             xmlns:flowable="http://flowable.org/bpmn"
+             xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+             targetNamespace="http://flowable.org/examples">
+
+  <process id="STAGE_GATE_APPROVAL" name="Stage Gate Approval" isExecutable="true">
+
+    <startEvent id="startEvent" flowable:initiator="applicantId" />
+
+    <userTask id="fillInfo" name="填写审批信息" flowable:assignee="${applicantId}" />
+    <sequenceFlow id="flow1" sourceRef="startEvent" targetRef="fillInfo" />
+
+    <!-- Sequential approvals: fillInfo → startApproval → finalApproval -->
+    <userTask id="startApproval" name="启动审批" />
+    <sequenceFlow id="flow2" sourceRef="fillInfo" targetRef="startApproval" />
+
+    <exclusiveGateway id="gate1" name="启动审批结果" />
+    <sequenceFlow id="flow3" sourceRef="startApproval" targetRef="gate1" />
+
+    <!-- Early rejection path: invoke onRejected callback before ending -->
+    <serviceTask id="handleEarlyRejection" name="启动审批驳回处理"
+                 flowable:expression="${approvalCallbackService.onRejected(execution)}" />
+    <sequenceFlow id="flow3rej" sourceRef="gate1" targetRef="handleEarlyRejection">
+      <conditionExpression xsi:type="tFormalExpression">${approved == false}</conditionExpression>
+    </sequenceFlow>
+    <endEvent id="endRejectedEarly" />
+    <sequenceFlow id="flow3rejEnd" sourceRef="handleEarlyRejection" targetRef="endRejectedEarly" />
+
+    <userTask id="finalApproval" name="批准" />
+    <sequenceFlow id="flow4" sourceRef="gate1" targetRef="finalApproval">
+      <conditionExpression xsi:type="tFormalExpression">${approved == true}</conditionExpression>
+    </sequenceFlow>
+
+    <exclusiveGateway id="resultGate" name="最终审批结果" />
+    <sequenceFlow id="flow5" sourceRef="finalApproval" targetRef="resultGate" />
+
+    <!-- Approval path: invoke onApproved callback -->
+    <serviceTask id="updateStatus" name="更新状态"
+                 flowable:expression="${approvalCallbackService.onApproved(execution)}" />
+    <sequenceFlow id="flow6" sourceRef="resultGate" targetRef="updateStatus">
+      <conditionExpression xsi:type="tFormalExpression">${approved == true}</conditionExpression>
+    </sequenceFlow>
+
+    <endEvent id="endApproved" />
+    <sequenceFlow id="flow7" sourceRef="updateStatus" targetRef="endApproved" />
+
+    <!-- Final rejection path: invoke onRejected callback before ending -->
+    <serviceTask id="handleFinalRejection" name="最终审批驳回处理"
+                 flowable:expression="${approvalCallbackService.onRejected(execution)}" />
+    <sequenceFlow id="flow8" sourceRef="resultGate" targetRef="handleFinalRejection">
+      <conditionExpression xsi:type="tFormalExpression">${approved == false}</conditionExpression>
+    </sequenceFlow>
+    <endEvent id="endRejected" />
+    <sequenceFlow id="flow9" sourceRef="handleFinalRejection" targetRef="endRejected" />
+
+  </process>
+
+</definitions>

@@ -3,15 +3,14 @@ export interface PaginationParams {
   pageSize: number;
 }
 
-export interface PaginatedResponse<T> {
-  data: T[];
+export interface PageResult<T> {
+  records: T[];
   total: number;
-  page: number;
+  pageNum: number;
   pageSize: number;
-  totalPages: number;
 }
 
-export interface ApiResponse<T> {
+export interface ApiResult<T> {
   code: number;
   message: string;
   data: T;

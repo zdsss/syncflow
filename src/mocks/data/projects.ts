@@ -1,21 +1,15 @@
 import type { Project } from '@/types';
-import { ProjectPhase, ProjectStatus } from '@/types';
+import { ProjectStatus } from '@/types';
 
 export const mockProjects: Project[] = [
-  // Level 1 - Industry
-  { id: 'p1', name: '汽车', category: '行业', phase: ProjectPhase.DEVELOPMENT, status: ProjectStatus.IN_PROGRESS, leaderId: 'u6', startDate: '2025-01-01', endDate: '2026-12-31', completion: 45, parentId: null, createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-04-01T00:00:00Z' },
-  // Level 2 - Domain
-  { id: 'p2', name: '新能源', category: '领域', phase: ProjectPhase.DEVELOPMENT, status: ProjectStatus.IN_PROGRESS, leaderId: 'u6', startDate: '2025-01-01', endDate: '2026-12-31', completion: 42, parentId: 'p1', createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-04-01T00:00:00Z' },
-  // Level 3 - Product Line
-  { id: 'p3', name: '电池', category: '产品线', phase: ProjectPhase.DEVELOPMENT, status: ProjectStatus.IN_PROGRESS, leaderId: 'u8', startDate: '2025-02-01', endDate: '2026-10-31', completion: 38, parentId: 'p2', createdAt: '2025-02-01T00:00:00Z', updatedAt: '2025-04-01T00:00:00Z' },
-  // Level 4 - Sub-system
-  { id: 'p4', name: '电池Pack', category: '子系统', phase: ProjectPhase.DEVELOPMENT, status: ProjectStatus.IN_PROGRESS, leaderId: 'u1', startDate: '2025-03-01', endDate: '2026-06-30', completion: 35, parentId: 'p3', createdAt: '2025-03-01T00:00:00Z', updatedAt: '2025-04-01T00:00:00Z' },
-  // Level 5 - Module
-  { id: 'p5', name: '电池模组', category: '模组', phase: ProjectPhase.PLANNING, status: ProjectStatus.IN_PROGRESS, leaderId: 'u2', startDate: '2025-04-01', endDate: '2026-03-31', completion: 25, parentId: 'p4', createdAt: '2025-04-01T00:00:00Z', updatedAt: '2025-04-15T00:00:00Z' },
-  { id: 'p6', name: '电池包', category: '组件', phase: ProjectPhase.CONCEPT, status: ProjectStatus.NOT_STARTED, leaderId: 'u3', startDate: '2025-05-01', endDate: '2025-12-31', completion: 10, parentId: 'p5', createdAt: '2025-05-01T00:00:00Z', updatedAt: '2025-05-01T00:00:00Z' },
-  { id: 'p7', name: '电池冷却液', category: '零件', phase: ProjectPhase.SURVEY, status: ProjectStatus.NOT_STARTED, leaderId: 'u4', startDate: '2025-06-01', endDate: '2025-11-30', completion: 5, parentId: 'p6', createdAt: '2025-06-01T00:00:00Z', updatedAt: '2025-06-01T00:00:00Z' },
-  // Additional projects
-  { id: 'p8', name: '智能驾驶系统', category: '子系统', phase: ProjectPhase.CONCEPT, status: ProjectStatus.IN_PROGRESS, leaderId: 'u8', startDate: '2025-03-15', endDate: '2026-09-30', completion: 20, parentId: 'p2', createdAt: '2025-03-15T00:00:00Z', updatedAt: '2025-04-01T00:00:00Z' },
-  { id: 'p9', name: '充电桩控制系统', category: '子系统', phase: ProjectPhase.DEVELOPMENT, status: ProjectStatus.DELAYED, leaderId: 'u10', startDate: '2025-01-15', endDate: '2025-08-31', completion: 60, parentId: 'p2', createdAt: '2025-01-15T00:00:00Z', updatedAt: '2025-05-01T00:00:00Z' },
-  { id: 'p10', name: '车载信息娱乐系统', category: '子系统', phase: ProjectPhase.TESTING, status: ProjectStatus.IN_PROGRESS, leaderId: 'u11', startDate: '2025-02-01', endDate: '2025-07-31', completion: 75, parentId: 'p1', createdAt: '2025-02-01T00:00:00Z', updatedAt: '2025-05-01T00:00:00Z' },
+  { id: 1, code: 'NEV', name: '汽车', projectType: '行业', status: ProjectStatus.IN_PROGRESS, ownerId: 6, ownerName: '张三', plannedStart: '2025-01-01', plannedEnd: '2026-12-31', progress: 45, parentId: null, priority: 2, createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-04-01T00:00:00Z' },
+  { id: 2, code: 'NE', name: '新能源', projectType: '领域', status: ProjectStatus.IN_PROGRESS, ownerId: 6, ownerName: '张三', plannedStart: '2025-01-01', plannedEnd: '2026-12-31', progress: 42, parentId: 1, priority: 2, createdAt: '2025-01-01T00:00:00Z', updatedAt: '2025-04-01T00:00:00Z' },
+  { id: 3, code: 'BAT', name: '电池', projectType: '产品线', status: ProjectStatus.IN_PROGRESS, ownerId: 8, ownerName: '吴九', plannedStart: '2025-02-01', plannedEnd: '2026-10-31', progress: 38, parentId: 2, priority: 2, createdAt: '2025-02-01T00:00:00Z', updatedAt: '2025-04-01T00:00:00Z' },
+  { id: 4, code: 'BP', name: '电池Pack', projectType: '子系统', status: ProjectStatus.IN_PROGRESS, ownerId: 1, ownerName: '管理员', plannedStart: '2025-03-01', plannedEnd: '2026-06-30', progress: 35, parentId: 3, priority: 2, createdAt: '2025-03-01T00:00:00Z', updatedAt: '2025-04-01T00:00:00Z' },
+  { id: 5, code: 'BM', name: '电池模组', projectType: '模组', status: ProjectStatus.IN_PROGRESS, ownerId: 2, ownerName: '张三', plannedStart: '2025-04-01', plannedEnd: '2026-03-31', progress: 25, parentId: 4, priority: 3, createdAt: '2025-04-01T00:00:00Z', updatedAt: '2025-04-15T00:00:00Z' },
+  { id: 6, code: 'BP2', name: '电池包', projectType: '组件', status: ProjectStatus.NOT_STARTED, ownerId: 3, ownerName: '李四', plannedStart: '2025-05-01', plannedEnd: '2025-12-31', progress: 10, parentId: 5, priority: 3, createdAt: '2025-05-01T00:00:00Z', updatedAt: '2025-05-01T00:00:00Z' },
+  { id: 7, code: 'BC', name: '电池冷却液', projectType: '零件', status: ProjectStatus.NOT_STARTED, ownerId: 4, ownerName: '王五', plannedStart: '2025-06-01', plannedEnd: '2025-11-30', progress: 5, parentId: 6, priority: 4, createdAt: '2025-06-01T00:00:00Z', updatedAt: '2025-06-01T00:00:00Z' },
+  { id: 8, code: 'AD', name: '智能驾驶系统', projectType: '子系统', status: ProjectStatus.IN_PROGRESS, ownerId: 8, ownerName: '吴九', plannedStart: '2025-03-15', plannedEnd: '2026-09-30', progress: 20, parentId: 2, priority: 2, createdAt: '2025-03-15T00:00:00Z', updatedAt: '2025-04-01T00:00:00Z' },
+  { id: 9, code: 'EV', name: '充电桩控制系统', projectType: '子系统', status: ProjectStatus.DELAYED, ownerId: 10, ownerName: '测试用户', plannedStart: '2025-01-15', plannedEnd: '2025-08-31', progress: 60, parentId: 2, priority: 1, createdAt: '2025-01-15T00:00:00Z', updatedAt: '2025-05-01T00:00:00Z' },
+  { id: 10, code: 'IVI', name: '车载信息娱乐系统', projectType: '子系统', status: ProjectStatus.IN_PROGRESS, ownerId: 11, ownerName: '李明', plannedStart: '2025-02-01', plannedEnd: '2025-07-31', progress: 75, parentId: 1, priority: 2, createdAt: '2025-02-01T00:00:00Z', updatedAt: '2025-05-01T00:00:00Z' },
 ];

@@ -1,6 +1,6 @@
 .page {
   padding: 24px;
-  background: #F5F7FA;
+  background: var(--color-bg-page, #F5F7FA);
   min-height: 100%;
 }
 
@@ -14,7 +14,7 @@
 .title {
   font-size: 28px;
   font-weight: 600;
-  color: #1A1A1A;
+  color: var(--color-text-title, #1A1A1A);
   margin: 0;
 }
 

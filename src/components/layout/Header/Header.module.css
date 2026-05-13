@@ -1,7 +1,7 @@
 .header {
   height: 56px;
-  background: #FFFFFF;
-  border-bottom: 1px solid #E8E8E8;
+  background: var(--color-bg-card, #FFFFFF);
+  border-bottom: 1px solid var(--color-border, #E8E8E8);
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -74,6 +74,32 @@
   color: #3366FF;
 }
 
+.userIdentity {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  cursor: pointer;
+  gap: 1px;
+}
+
+.userIdentity:hover .userRealName {
+  color: #3366FF;
+}
+
+.userRealName {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333333;
+  line-height: 1.4;
+  transition: color 200ms;
+}
+
+.userPhone {
+  font-size: 12px;
+  color: #999999;
+  line-height: 1.4;
+}
+
 .langBtn {
   font-size: 14px;
   color: #666666;
@@ -131,4 +157,36 @@
   font-size: 11px;
   color: #999999;
   margin-top: 4px;
+}
+
+@media (max-width: 1024px) {
+  .header {
+    padding: 0 16px;
+  }
+
+  .teamInfo {
+    display: none;
+  }
+
+  .leftSection {
+    gap: 12px;
+  }
+}
+
+@media (max-width: 768px) {
+  .header {
+    padding: 0 12px;
+  }
+
+  .userName {
+    display: none;
+  }
+
+  .userIdentity {
+    display: none;
+  }
+
+  .userPhone {
+    display: none;
+  }
 }

@@ -1,75 +1,67 @@
-import type React from 'react';
 import { useMemo, useState } from 'react';
-import { Checkbox } from 'antd';
 import dayjs from 'dayjs';
 import type { Task } from '@/types';
-import { TaskStatus } from '@/types';
-import { TASK_STATUS_CONFIG } from '@/constants';
+import {
+  calculateCriticalPath,
+  useGanttColumns,
+  useGanttDrag,
+  GanttLeftTable,
+  GanttTimeline,
+} from './gantt';
 import styles from './TaskGanttTab.module.css';
+
+export { calculateCriticalPath } from './gantt';
+export type { CPMData } from './gantt';
 
 interface TaskGanttTabProps {
   tasks: Task[];
   onTaskClick?: (task: Task) => void;
+  onTaskUpdate?: (taskId: string, updates: { planStart?: string; planEnd?: string }) => void;
 }
 
-const DEPARTMENTS = [
-  { id: 'all', label: '全部' },
-  { id: 'design', label: '设计部' },
-  { id: 'product', label: '产品部' },
-  { id: 'dev', label: '研发部' },
-  { id: 'test', label: '测试部' },
-  { id: 'production', label: '生产部' },
-];
-
-const STATUS_BAR_COLORS: Record<string, string> = {
-  [TaskStatus.IN_PROGRESS]: '#3366FF',
-  [TaskStatus.NOT_STARTED]: '#FAAD14',
-  [TaskStatus.PENDING_ASSIGN]: '#FAAD14',
-  [TaskStatus.COMPLETED]: '#52C41A',
-  [TaskStatus.OVERDUE]: '#FF4D4F',
-  [TaskStatus.URGENT]: '#FF4D4F',
-  [TaskStatus.ON_HOLD]: '#00BCD4',
-  [TaskStatus.CANCELLED]: '#BFBFBF',
-};
-
-function getMonthWeekColumns(startYear: number, monthCount: number) {
-  const months: { key: string; label: string; weeks: { key: string; label: string; days: number }[] }[] = [];
-  const d = dayjs(`${startYear}-01-01`);
-  for (let i = 0; i < monthCount; i++) {
-    const m = d.add(i, 'month');
-    const weeks: { key: string; label: string; days: number }[] = [];
-    const startOfMonth = m.startOf('month');
-    const endOfMonth = m.endOf('month');
-    let weekStart = startOfMonth.startOf('week').add(1, 'day');
-    let wNum = 1;
-    while (weekStart.isBefore(endOfMonth)) {
-      weeks.push({ key: `${m.format('YYYY-MM')}-W${wNum}`, label: `W${wNum}`, days: 7 });
-      weekStart = weekStart.add(1, 'week');
-      wNum++;
-    }
-    if (weeks.length === 0) weeks.push({ key: startOfMonth.format('YYYY-MM-DD'), label: 'W1', days: 7 });
-    months.push({ key: m.format('YYYY-MM'), label: m.format('M月'), weeks });
-  }
-  return months;
-}
-
-export default function TaskGanttTab({ tasks, onTaskClick }: TaskGanttTabProps) {
+export default function TaskGanttTab({ tasks, onTaskClick, onTaskUpdate }: TaskGanttTabProps) {
   const [selectedDepts, setSelectedDepts] = useState<string[]>(['all']);
-  const startYear = 2025;
-  const monthCount = 12;
-  const monthWeeks = useMemo(() => getMonthWeekColumns(startYear, monthCount), []);
-  const totalWeeks = monthWeeks.reduce((s, m) => s + m.weeks.length, 0);
-  const weekWidth = 60;
-  const timelineStart = dayjs(`${startYear}-01-01`);
-  const timelineEnd = timelineStart.add(monthCount, 'month');
-  const totalDays = timelineEnd.diff(timelineStart, 'day');
-  const totalTimelineWidth = totalWeeks * weekWidth;
+  const [showCriticalPath, setShowCriticalPath] = useState(false);
+  const [showDependencies, setShowDependencies] = useState(true);
+  const [zoomLevel, setZoomLevel] = useState<'week' | 'month' | 'quarter'>('week');
+  const ganttBodyRef = { current: null as HTMLDivElement | null };
 
-  // Group tasks by department (simplified: use tags to simulate department)
+  const currentYear = new Date().getFullYear();
+  const startYear = currentYear;
+  const monthCount = (currentYear + 2 - startYear) * 12 - new Date().getMonth();
+
+  const {
+    monthWeeks,
+    weekWidth,
+    timelineStart,
+    totalDays,
+    monthColumns,
+    monthCellWidth,
+    quarterColumns,
+    quarterCellWidth,
+    todayOffset,
+  } = useGanttColumns(startYear, monthCount);
+
+  const totalWeeks = monthWeeks.reduce((s, m) => s + m.weeks.length, 0);
+
+  const totalTimelineWidth =
+    zoomLevel === 'week'
+      ? totalWeeks * weekWidth
+      : zoomLevel === 'month'
+        ? monthColumns.length * monthCellWidth
+        : quarterColumns.length * quarterCellWidth;
+
+  const { dragging, dragOffset, dragRef, handleDragStart, handleResizeStart } = useGanttDrag({
+    onTaskUpdate,
+    totalTimelineWidth,
+    totalDays,
+    tasks,
+  });
+
   const deptTaskMap = useMemo(() => {
     const map: Record<string, Task[]> = {};
     for (const task of tasks) {
-      const dept = task.tags[0] || 'other';
+      const dept = task.tags?.split(',')[0]?.trim() || 'other';
       if (!map[dept]) map[dept] = [];
       map[dept].push(task);
     }
@@ -79,21 +71,37 @@ export default function TaskGanttTab({ tasks, onTaskClick }: TaskGanttTabProps) 
   const visibleTasks = useMemo(() => {
     if (selectedDepts.includes('all')) return tasks;
     return tasks.filter((t) => {
-      const dept = t.tags[0] || 'other';
+      const dept = t.tags?.split(',')[0]?.trim() || 'other';
       return selectedDepts.includes(dept);
     });
   }, [tasks, selectedDepts]);
 
+  const cpmData = useMemo(() => calculateCriticalPath(tasks), [tasks]);
+
   const getBarForTask = (task: Task) => {
-    if (!task.planStart || !task.planEnd) return null;
-    const s = dayjs(task.planStart);
-    const e = dayjs(task.planEnd);
-    if (e.isBefore(timelineStart) || s.isAfter(timelineEnd)) return null;
+    if (!task.plannedStart || !task.plannedEnd) return null;
+    const s = dayjs(task.plannedStart);
+    const e = dayjs(task.plannedEnd);
+    if (e.isBefore(timelineStart) || s.isAfter(dayjs(timelineStart).add(monthCount, 'month'))) return null;
     const startOffset = Math.max(0, s.diff(timelineStart, 'day'));
     const endOffset = Math.min(totalDays, e.diff(timelineStart, 'day'));
     return {
       left: (startOffset / totalDays) * totalTimelineWidth,
       width: Math.max(20, ((endOffset - startOffset) / totalDays) * totalTimelineWidth),
+    };
+  };
+
+  const getActualBarForTask = (task: Task) => {
+    if (!task.actualStart) return null;
+    const s = dayjs(task.actualStart);
+    const e = task.actualEnd ? dayjs(task.actualEnd) : dayjs();
+    if (e.isBefore(timelineStart) || s.isAfter(dayjs(timelineStart).add(monthCount, 'month'))) return null;
+    const startOffset = Math.max(0, s.diff(timelineStart, 'day'));
+    const endOffset = Math.min(totalDays, e.diff(timelineStart, 'day'));
+    if (endOffset <= startOffset) return null;
+    return {
+      left: (startOffset / totalDays) * totalTimelineWidth,
+      width: Math.max(4, ((endOffset - startOffset) / totalDays) * totalTimelineWidth),
     };
   };
 
@@ -108,88 +116,47 @@ export default function TaskGanttTab({ tasks, onTaskClick }: TaskGanttTabProps) 
     }
   };
 
+  const todayLeft = (todayOffset / totalDays) * totalTimelineWidth;
+  const showTodayLine = todayOffset >= 0 && todayOffset <= totalDays;
+
   return (
     <div className={styles.container}>
       <div className={styles.layout}>
-        {/* Left filter panel */}
-        <div className={styles.filterPanel}>
-          <div className={styles.filterTitle}>部门筛选</div>
-          {DEPARTMENTS.map((dept) => (
-            <label key={dept.id} className={styles.filterItem}>
-              <Checkbox
-                checked={selectedDepts.includes(dept.id)}
-                onChange={() => handleDeptToggle(dept.id)}
-              >
-                {dept.label}
-                {dept.id !== 'all' && (
-                  <span className={styles.filterCount}>
-                    ({(deptTaskMap[dept.id] || []).length})
-                  </span>
-                )}
-              </Checkbox>
-            </label>
-          ))}
-        </div>
-
-        {/* Right gantt */}
-        <div className={styles.ganttArea}>
-          <div className={styles.ganttScroll}>
-            <div className={styles.ganttInner}>
-              {/* Month header */}
-              <div className={styles.ganttHeader}>
-                {monthWeeks.map((m) => (
-                  <div key={m.key} className={styles.monthCell} style={{ width: m.weeks.length * weekWidth }}>
-                    {m.label}
-                  </div>
-                ))}
-              </div>
-              {/* Week header */}
-              <div className={styles.ganttSubHeader}>
-                {monthWeeks.flatMap((m) =>
-                  m.weeks.map((w) => (
-                    <div key={w.key} className={styles.weekCell} style={{ width: weekWidth }}>
-                      {w.label}
-                    </div>
-                  ))
-                )}
-              </div>
-              {/* Task rows */}
-              <div className={styles.ganttBody}>
-                {visibleTasks.map((task) => {
-                  const bar = getBarForTask(task);
-                  const barColor = STATUS_BAR_COLORS[task.status] || '#BFBFBF';
-                  return (
-                    <div
-                      key={task.id}
-                      className={styles.ganttRow}
-                      onClick={() => onTaskClick?.(task)}
-                    >
-                      <div className={styles.timelineRow}>
-                        {monthWeeks.flatMap((m) =>
-                          m.weeks.map((w) => (
-                            <div key={w.key} className={styles.gridCell} style={{ width: weekWidth }} />
-                          ))
-                        )}
-                        {bar && (
-                          <div
-                            className={styles.ganttBar}
-                            style={{ left: bar.left, width: bar.width, backgroundColor: barColor }}
-                            title={task.name}
-                          >
-                            <span className={styles.barLabel}>{task.name}</span>
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-                {visibleTasks.length === 0 && (
-                  <div className={styles.emptyState}>暂无任务数据</div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
+        <GanttLeftTable visibleTasks={visibleTasks} onTaskClick={onTaskClick} />
+        <GanttTimeline
+          visibleTasks={visibleTasks}
+          tasks={tasks}
+          onTaskClick={onTaskClick}
+          selectedDepts={selectedDepts}
+          deptTaskMap={deptTaskMap}
+          handleDeptToggle={handleDeptToggle}
+          showCriticalPath={showCriticalPath}
+          setShowCriticalPath={setShowCriticalPath}
+          showDependencies={showDependencies}
+          setShowDependencies={setShowDependencies}
+          zoomLevel={zoomLevel}
+          setZoomLevel={setZoomLevel}
+          monthWeeks={monthWeeks}
+          weekWidth={weekWidth}
+          monthColumns={monthColumns}
+          monthCellWidth={monthCellWidth}
+          quarterColumns={quarterColumns}
+          quarterCellWidth={quarterCellWidth}
+          totalTimelineWidth={totalTimelineWidth}
+          totalDays={totalDays}
+          showTodayLine={showTodayLine}
+          todayLeft={todayLeft}
+          startYear={startYear}
+          cpmData={cpmData}
+          getBarForTask={getBarForTask}
+          getActualBarForTask={getActualBarForTask}
+          dragging={dragging}
+          dragOffset={dragOffset}
+          dragRef={dragRef}
+          ganttBodyRef={ganttBodyRef}
+          handleDragStart={handleDragStart}
+          handleResizeStart={handleResizeStart}
+        />
       </div>
     </div>
   );

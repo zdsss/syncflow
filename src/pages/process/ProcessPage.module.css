@@ -16,7 +16,7 @@
 }
 
 .title {
-  font-size: 28px;
+  font-size: 20px;
   font-weight: 600;
   color: var(--color-text-title, #1A1A1A);
   margin: 0;
@@ -35,7 +35,7 @@
   width: 40%;
   min-width: 320px;
   background: #fff;
-  border-radius: var(--radius-lg, 12px);
+  border-radius: var(--radius-md, 8px);
   padding: 16px;
   overflow-y: auto;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
@@ -45,7 +45,7 @@
   flex: 1;
   min-width: 0;
   background: #fff;
-  border-radius: var(--radius-lg, 12px);
+  border-radius: var(--radius-md, 8px);
   padding: 16px;
   overflow-y: auto;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
@@ -141,4 +141,68 @@
   font-size: 12px;
   color: var(--color-text-secondary, #999);
   margin: 4px 0 0 0;
+}
+
+.fileSection {
+  flex-shrink: 0;
+  background: #fff;
+  border-radius: var(--radius-md, 8px);
+  padding: 16px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+
+.fileSectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.fileSectionHeader .panelTitle {
+  margin: 0;
+  padding-bottom: 0;
+  border-bottom: none;
+}
+
+@media (max-width: 1024px) {
+  .processPage {
+    padding: 16px;
+  }
+
+  .mainContent {
+    flex-direction: column;
+  }
+
+  .listPanel {
+    width: 100%;
+    min-width: 0;
+    max-height: 280px;
+  }
+
+  .detailPanel {
+    flex: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .processPage {
+    padding: 12px;
+  }
+
+  .header {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .title {
+    font-size: 18px;
+  }
+
+  .listPanel {
+    max-height: 220px;
+  }
+
+  .stepCard {
+    padding: 10px 12px;
+  }
 }

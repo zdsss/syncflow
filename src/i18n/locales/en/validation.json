@@ -1,0 +1,12 @@
+{
+  "required": "This field is required",
+  "emailInvalid": "Please enter a valid email address",
+  "passwordMin": "Password must be at least 6 characters",
+  "passwordMismatch": "Passwords do not match",
+  "nameRequired": "Please enter your name",
+  "selectRequired": "Please select an option",
+  "dateRequired": "Please select a date",
+  "numberInvalid": "Please enter a valid number",
+  "minValue": "Cannot be less than minimum value",
+  "maxValue": "Cannot exceed maximum value"
+}

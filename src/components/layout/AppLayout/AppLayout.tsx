@@ -4,33 +4,20 @@ import { ConfigProvider } from 'antd';
 import theme from '@/styles/antd-theme';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
-import { useAppStore } from '@/stores/useAppStore';
 import '@/styles/tokens.css';
 import '@/styles/global.css';
+import styles from './AppLayout.module.css';
 
 const { Content } = Layout;
 
 export default function AppLayout() {
-  const sidebarCollapsed = useAppStore((s) => s.sidebarCollapsed);
-
   return (
     <ConfigProvider theme={theme}>
-      <Layout style={{ minHeight: '100vh' }}>
+      <Layout style={{ height: '100vh', overflow: 'hidden' }}>
         <Sidebar />
-        <Layout
-          style={{
-            marginLeft: sidebarCollapsed ? 64 : 240,
-            transition: 'margin-left 300ms ease-in-out',
-          }}
-        >
+        <Layout className={`app-layout ${styles.mainLayout}`}>
           <Header />
-          <Content
-            style={{
-              padding: 24,
-              minHeight: 'calc(100vh - 56px)',
-              background: '#F5F7FA',
-            }}
-          >
+          <Content className={styles.content}>
             <Outlet />
           </Content>
         </Layout>

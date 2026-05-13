@@ -1,0 +1,49 @@
+.batchBar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 24px;
+  background: #1A1A1A;
+  color: #FFFFFF;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+  z-index: 100;
+  animation: slideUp 0.2s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateX(-50%) translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+}
+
+.selectionInfo {
+  font-size: 14px;
+  color: #FFFFFF;
+  white-space: nowrap;
+}
+
+.divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.cancelBtn {
+  color: rgba(255, 255, 255, 0.65) !important;
+  border: none !important;
+  font-size: 13px;
+}
+
+.cancelBtn:hover {
+  color: #FFFFFF !important;
+}

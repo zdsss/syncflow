@@ -3,17 +3,21 @@
   border-radius: 8px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.08);
   overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .layout {
   display: flex;
-  height: calc(100vh - 280px);
+  flex: 1;
+  min-height: 0;
 }
 
 .leftPanel {
   width: 240px;
   min-width: 240px;
-  border-right: 1px solid #E8E8E8;
+  border-right: 1px solid var(--color-border, #E8E8E8);
   display: flex;
   flex-direction: column;
   overflow-y: auto;
@@ -21,16 +25,22 @@
 
 .leftHeader {
   padding: 8px 12px;
-  border-bottom: 1px solid #E8E8E8;
+  border-bottom: 1px solid var(--color-border, #E8E8E8);
   background: #FAFAFA;
   height: 32px;
   display: flex;
   align-items: center;
 }
 
+.leftHeaderTitle {
+  font-size: 12px;
+  color: #666;
+  font-weight: 500;
+}
+
 .collapseAll {
   font-size: 12px;
-  color: #3366FF;
+  color: var(--color-primary-5, #3366FF);
   cursor: pointer;
 }
 
@@ -46,7 +56,7 @@
 }
 
 .treeRow:hover {
-  background: #F0F5FF;
+  background: var(--color-bg-active, #F0F5FF);
 }
 
 .nodeDot {
@@ -82,7 +92,7 @@
 
 .yearHeader {
   display: flex;
-  border-bottom: 1px solid #E8E8E8;
+  border-bottom: 1px solid var(--color-border, #E8E8E8);
   background: #FAFAFA;
   position: sticky;
   top: 0;
@@ -96,13 +106,13 @@
   height: 32px;
   font-size: 13px;
   font-weight: 600;
-  color: #1A1A1A;
-  border-right: 1px solid #E8E8E8;
+  color: var(--color-text-title, #1A1A1A);
+  border-right: 1px solid var(--color-border, #E8E8E8);
 }
 
 .monthHeader {
   display: flex;
-  border-bottom: 1px solid #E8E8E8;
+  border-bottom: 1px solid var(--color-border, #E8E8E8);
   background: #FAFAFA;
   position: sticky;
   top: 32px;
@@ -132,7 +142,7 @@
 }
 
 .ganttRow:hover {
-  background: #F0F5FF;
+  background: var(--color-bg-active, #F0F5FF);
 }
 
 .gridCell {
@@ -144,8 +154,8 @@
 
 .ganttBar {
   position: absolute;
-  top: 8px;
-  height: 24px;
+  top: 5px;
+  height: 30px;
   border-radius: 4px;
   display: flex;
   align-items: center;
@@ -155,8 +165,23 @@
   overflow: hidden;
 }
 
-.ganttBar:hover {
-  opacity: 0.85;
+.summaryBar {
+  position: absolute;
+  top: 4px;
+  height: 24px;
+  border-radius: 4px;
+  background: #EBF0FF;
+  border: 1px dashed #8AA8FF;
+}
+
+.ganttAreaHeader {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  padding: 4px 12px;
+  border-bottom: 1px solid var(--color-border, #E8E8E8);
+  background: #FAFAFA;
+  height: 32px;
 }
 
 .barLabel {
@@ -175,11 +200,11 @@
   background: #FAFAFA;
 }
 
-.summaryBar {
+.currentMonthHighlight {
   position: absolute;
-  top: 4px;
-  height: 24px;
-  border-radius: 4px;
-  background: #EBF0FF;
-  border: 1px dashed #8AA8FF;
+  top: 0;
+  bottom: 0;
+  background: rgba(51, 102, 255, 0.06);
+  z-index: 0;
+  pointer-events: none;
 }

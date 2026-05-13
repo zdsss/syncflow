@@ -1,5 +1,5 @@
-import { Card } from 'antd';
-import { FileTextOutlined } from '@ant-design/icons';
+import { Card, Button } from 'antd';
+import { FileTextOutlined, ExportOutlined } from '@ant-design/icons';
 import styles from '../TemplatePage.module.css';
 
 interface Template {
@@ -14,9 +14,15 @@ interface Template {
 interface TemplateCardProps {
   template: Template;
   onClick: (id: string) => void;
+  onExport?: (id: string) => void;
 }
 
-export default function TemplateCard({ template, onClick }: TemplateCardProps) {
+export default function TemplateCard({ template, onClick, onExport }: TemplateCardProps) {
+  const handleExportClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    onExport?.(template.id);
+  };
+
   return (
     <Card
       className={styles.card}
@@ -33,6 +39,17 @@ export default function TemplateCard({ template, onClick }: TemplateCardProps) {
       <div className={styles.cardMeta}>
         <span>类型: {template.type === 'project' ? '项目' : '任务'}</span>
         <span>使用 {template.usageCount} 次</span>
+        {onExport && (
+          <Button
+            type="link"
+            size="small"
+            icon={<ExportOutlined />}
+            onClick={handleExportClick}
+            data-testid="export-btn"
+          >
+            导出
+          </Button>
+        )}
       </div>
     </Card>
   );
