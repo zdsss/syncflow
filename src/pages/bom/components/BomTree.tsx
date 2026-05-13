@@ -1,3 +1,4 @@
+import { useMemo } from 'react';
 import { Tree, Spin, Dropdown, message, Button } from 'antd';
 import type { DataNode } from 'antd/es/tree';
 import type { MenuProps } from 'antd';
@@ -32,6 +33,19 @@ function buildTreeNodes(items: BomItem[]): DataNode[] {
 }
 
 export default function BomTree({ data, selectedId, onSelect, loading, onAddChild, onEdit, onDelete }: BomTreeProps) {
+  const defaultExpandedKeys = useMemo(() => {
+    const keys: string[] = [];
+    const collectKeys = (items: BomItem[], depth: number) => {
+      if (depth >= 2) return;
+      for (const item of items) {
+        keys.push(String(item.id));
+        if (item.children?.length) collectKeys(item.children, depth + 1);
+      }
+    };
+    collectKeys(data, 0);
+    return keys;
+  }, [data]);
+
   if (loading) return <Spin style={{ display: 'block', margin: '40px auto' }} />;
 
   if (!data.length) {
@@ -89,7 +103,7 @@ export default function BomTree({ data, selectedId, onSelect, loading, onAddChil
       treeData={treeData}
       selectedKeys={selectedId ? [selectedId] : []}
       onSelect={(keys) => onSelect(keys.length ? (keys[0] as string) : null)}
-      defaultExpandAll
+      defaultExpandedKeys={defaultExpandedKeys}
       showLine
       titleRender={titleRender}
     />

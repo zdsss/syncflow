@@ -36,3 +36,4 @@ npm-debug.log*
 # Claude
 .claude/
 .github/workflows/
+doc/bak/*.pdf
