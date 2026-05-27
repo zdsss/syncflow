@@ -1,12 +1,10 @@
 package com.syncflow.file.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
-/**
- * View object for file detail display.
- */
 @Data
 public class FileVO {
 
@@ -14,20 +12,16 @@ public class FileVO {
 
     private String fileNo;
 
-    /** Stored file name. */
     private String name;
 
-    /** Original upload file name. */
     private String originalName;
 
     private String extension;
 
     private String mimeType;
 
-    /** File size in bytes. */
     private Long size;
 
-    /** Human-readable size label, e.g. "2.5 MB". */
     private String sizeLabel;
 
     private String storagePath;
@@ -44,7 +38,6 @@ public class FileVO {
 
     private Boolean isLatest;
 
-    /** 1=active, 0=deleted. */
     private Integer status;
 
     private String flowInstanceId;
@@ -63,13 +56,27 @@ public class FileVO {
 
     // ---- Enriched display fields ----
 
-    /** Display name of the uploader. */
     private String uploaderName;
 
-    /** Name of the folder containing this file. */
     private String folderName;
 
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    // ---- Frontend-aligned fields ----
+
+    @JsonProperty("type")
+    public String getFileType() {
+        return extension;
+    }
+
+    private String project;
+
+    private String statusLabel;
+
+    @JsonProperty("modifiedDate")
+    public String getModifiedDate() {
+        return updatedAt != null ? updatedAt.toLocalDate().toString().replace("-", "") : null;
+    }
 }

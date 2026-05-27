@@ -1,12 +1,8 @@
 package com.syncflow.config.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
-import java.math.BigDecimal;
-
-/**
- * Module spec view object.
- */
 @Data
 public class SpecVO {
 
@@ -14,15 +10,35 @@ public class SpecVO {
 
     private String specName;
 
+    @JsonProperty("name")
+    public String getName() {
+        return specName;
+    }
+
     private String crossSection;
+
+    @JsonProperty("sectionForm")
+    public String getSectionForm() {
+        return crossSection;
+    }
 
     private String material;
 
-    private BigDecimal wallThickness;
+    private String wallThickness;
 
     private String connectionType;
 
+    @JsonProperty("connectionMethod")
+    public String getConnectionMethod() {
+        return connectionType;
+    }
+
     private String specCode;
 
-    private Integer status;
+    @JsonProperty("moduleCode")
+    public String getModuleCode() {
+        return specCode;
+    }
+
+    private String status;
 }

@@ -1,12 +1,10 @@
 package com.syncflow.admin.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.util.List;
 
-/**
- * User view object
- */
 @Data
 public class UserVO {
 
@@ -15,6 +13,11 @@ public class UserVO {
     private String username;
 
     private String realName;
+
+    @JsonProperty("name")
+    public String getName() {
+        return realName;
+    }
 
     private String phone;
 
@@ -25,6 +28,11 @@ public class UserVO {
     private Integer status;
 
     private String deptName;
+
+    @JsonProperty("department")
+    public String getDepartment() {
+        return deptName;
+    }
 
     private List<String> roles;
 }

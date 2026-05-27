@@ -1,0 +1,17 @@
+# SyncFlow logrotate — daily rotation, 7 day retention
+/opt/syncflow/logs/*.log {
+    daily
+    rotate 7
+    missingok
+    notifempty
+    compress
+    delaycompress
+    copytruncate
+    dateext
+    dateformat -%Y%m%d
+    create 0640 syncflow syncflow
+    postrotate
+        # Notify systemd journal
+        /bin/systemctl kill -s USR1 syncflow.service 2>/dev/null || true
+    endscript
+}

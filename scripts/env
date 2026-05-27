@@ -1,0 +1,26 @@
+# =============================================================================
+# SyncFlow Environment Variables
+# Copy to 'env' and fill in your values.
+# =============================================================================
+
+# Server port (8088 serves both API + frontend)
+SERVER_PORT=8088
+
+# ---- Database ----
+DB_URL=jdbc:postgresql://localhost:5432/syncflow
+DB_USER=syncflow
+DB_PASS=syncflow123
+
+# ---- JWT (CHANGE THESE in production!) ----
+JWT_SECRET=change-me-to-a-random-string-at-least-256-bits
+JWT_EXPIRATION=900000
+JWT_REFRESH_EXPIRATION=604800000
+
+# ---- MinIO ----
+MINIO_ENDPOINT=http://localhost:9000
+MINIO_ACCESS_KEY=minioadmin
+MINIO_SECRET_KEY=minioadmin
+MINIO_BUCKET=syncflow
+
+# ---- Logging ----
+LOG_PATH=/opt/syncflow/logs

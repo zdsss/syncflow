@@ -92,4 +92,9 @@ public interface DashboardService {
      * Combined overview of projects and tasks.
      */
     DashboardOverviewVO getOverview();
+
+    /**
+     * Frontend-aligned flat dashboard stats.
+     */
+    FrontendDashboardVO getFrontendDashboard(Long projectId);
 }

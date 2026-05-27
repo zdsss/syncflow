@@ -1,77 +1,118 @@
 package com.syncflow.project.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * View object for project display, supports tree structure with children.
- */
 @Data
 public class ProjectVO {
 
     private Long id;
 
-    /** Project display name. */
     private String name;
 
-    /** Unique project code. */
     private String code;
 
-    /** Rich-text project description. */
     private String description;
 
-    /** FK to sys_user.id. */
     private Long ownerId;
 
-    /** Resolved owner display name. */
     private String ownerName;
 
-    /** Project classification. */
     private String projectType;
 
-    /** Status code: 1=not_started, 2=in_progress, 3=completed, 4=delayed, 0=cancelled. */
+    @JsonProperty("type")
+    public String getType() {
+        return projectType;
+    }
+
     private Integer status;
 
-    /** Priority level: 1=urgent, 2=high, 3=medium, 4=low. */
     private Integer priority;
 
-    /** Completion percentage 0-100. */
     private Integer progress;
 
-    /** Planned project start date. */
     private LocalDate plannedStart;
 
-    /** Planned project end date. */
     private LocalDate plannedEnd;
 
-    /** Actual project start date. */
     private LocalDate actualStart;
 
-    /** Actual project end date. */
     private LocalDate actualEnd;
 
-    /** FK to parent project id. */
     private Long parentId;
 
-    /** Materialised ancestor path. */
     private String parentPath;
 
-    /** FK to owning department. */
     private Long deptId;
 
-    /** Workflow engine instance identifier. */
     private String flowInstanceId;
 
-    /** Tenant identifier. */
     private Long tenantId;
 
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
 
-    /** Child projects for tree rendering. */
     private List<ProjectVO> children;
+
+    // ---- Frontend-aligned fields ----
+
+    private List<AssigneeVO> assignees;
+
+    private List<ProjectStageVO> stages;
+
+    private String plannedHours;
+
+    private String feedbackHours;
+
+    private String approvedHours;
+
+    private String plannedDuration;
+
+    private String archiveLocation;
+
+    private List<AttachmentVO> attachments;
+
+    @Data
+    public static class ProjectStageVO {
+        private String id;
+        private String name;
+        private Integer progress;
+        private String startDate;
+        private String endDate;
+        private List<ProjectStageVO> children;
+        private List<TaskSummaryVO> tasks;
+    }
+
+    @Data
+    public static class TaskSummaryVO {
+        private String id;
+        private String name;
+        private String type;
+        private Integer progress;
+        private String status;
+    }
+
+    @Data
+    public static class AttachmentVO {
+        private String id;
+        private String name;
+        private String size;
+        private String date;
+        private String status;
+        private String operator;
+    }
+
+    @Data
+    public static class AssigneeVO {
+        private String id;
+        private String name;
+        private String phone;
+        private String avatar;
+        private String department;
+    }
 }

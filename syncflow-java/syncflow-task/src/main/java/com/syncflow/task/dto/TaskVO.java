@@ -1,17 +1,14 @@
 package com.syncflow.task.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
+import com.syncflow.admin.dto.UserVO;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
-/**
- * Full detail view object for a single task.
- * <p>
- * Includes all entity fields plus denormalised display names and the
- * current user's watching status.
- */
 @Data
 public class TaskVO {
 
@@ -23,10 +20,8 @@ public class TaskVO {
 
     private String description;
 
-    /** Task type code: TASK, MILESTONE, ISSUE, etc. */
     private String type;
 
-    /** Chinese display label for the type. */
     private String typeName;
 
     private Long projectId;
@@ -39,10 +34,18 @@ public class TaskVO {
 
     private String parentPath;
 
-    /** Status integer code (1-5). */
     private Integer status;
 
-    /** Priority: 1=URGENT, 2=HIGH, 3=MEDIUM, 4=LOW. */
+    @JsonProperty("statusLabel")
+    public String getStatusLabel() {
+        if (status == null) return "todo";
+        return switch (status) {
+            case 2 -> "in_progress";
+            case 3, 4 -> "done";
+            default -> "todo";
+        };
+    }
+
     private Integer priority;
 
     private Integer progress;
@@ -87,19 +90,63 @@ public class TaskVO {
 
     // ---- Enriched display fields ----
 
-    /** Display name of the assignee (from sys_user.real_name). */
     private String assigneeName;
 
-    /** Display name of the reporter (from sys_user.real_name). */
     private String reporterName;
 
-    /** Name of the associated project (from prj_project.name). */
     private String projectName;
 
-    /** Whether the current authenticated user is watching this task. */
     private Boolean isWatching;
 
     private LocalDateTime createdAt;
 
     private LocalDateTime updatedAt;
+
+    // ---- Frontend-aligned fields ----
+
+    @JsonProperty("name")
+    public String getName() {
+        return title;
+    }
+
+    private List<UserVO> assignees;
+
+    private String feedbackHours;
+
+    private String approvedHours;
+
+    private String plannedDuration;
+
+    private String actualEndDisplay;
+
+    private String reminder;
+
+    private String archiveLocation;
+
+    private List<TaskDependencyVO> dependencies;
+
+    private List<TaskAttachmentVO> attachments;
+
+    private Boolean isMilestone;
+
+    @JsonProperty("isWatched")
+    public Boolean getIsWatched() {
+        return isWatching;
+    }
+
+    @Data
+    public static class TaskDependencyVO {
+        private String taskId;
+        private String type;
+    }
+
+    @Data
+    public static class TaskAttachmentVO {
+        private String id;
+        private String name;
+        private String size;
+        private String date;
+        private String status;
+        private String operator;
+    }
 }

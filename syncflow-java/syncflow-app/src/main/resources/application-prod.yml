@@ -1,0 +1,104 @@
+# =============================================================================
+# SyncFlow Production Configuration (2GB server optimized)
+# =============================================================================
+
+server:
+  port: ${SERVER_PORT:8088}
+  # Serve embedded frontend + API on same port
+  compression:
+    enabled: true
+    mime-types: text/html,text/css,application/javascript,application/json
+
+spring:
+  application:
+    name: syncflow
+
+  # ---- Database (local PostgreSQL, tuned for 2GB RAM) ----
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/syncflow}
+    username: ${DB_USER:syncflow}
+    password: ${DB_PASS:syncflow123}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      minimum-idle: 2
+      maximum-pool-size: 5           # tight for 2GB
+      idle-timeout: 300000
+      max-lifetime: 1800000
+      connection-timeout: 30000
+
+  # ---- Cache: simple in-memory (no Redis needed) ----
+  cache:
+    type: simple
+
+  # ---- Disable Redis auto-config ----
+  autoconfigure:
+    exclude:
+      - org.springframework.boot.autoconfigure.data.redis.RedisAutoConfiguration
+      - org.springframework.boot.autoconfigure.data.redis.RedisRepositoriesAutoConfiguration
+
+  jackson:
+    date-format: yyyy-MM-dd HH:mm:ss
+    time-zone: Asia/Shanghai
+    default-property-inclusion: non_null
+    serialization:
+      write-dates-as-timestamps: false
+
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+
+  # ---- Static resources (embedded frontend) ----
+  web:
+    resources:
+      static-locations: classpath:/static/
+      cache:
+        period: 604800  # 7 days for hashed assets
+
+# ---- MyBatis-Plus (disable SQL logging in prod) ----
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+  global-config:
+    db-config:
+      id-type: auto
+      logic-delete-field: deletedAt
+      logic-delete-value: "NOW()"
+      logic-not-delete-value: "NULL"
+  type-aliases-package: com.syncflow.**.entity
+
+# ---- JWT ----
+jwt:
+  secret: ${JWT_SECRET:change-me-in-production-min-256-bits}
+  expiration: ${JWT_EXPIRATION:900000}
+  refresh-expiration: ${JWT_REFRESH_EXPIRATION:604800000}
+
+# ---- MinIO (local, lightweight object storage) ----
+minio:
+  endpoint: ${MINIO_ENDPOINT:http://localhost:9000}
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin}
+  bucket: ${MINIO_BUCKET:syncflow}
+
+# ---- Flowable ----
+flowable:
+  async-executor-enabled: false
+  job-executor-enabled: false
+  idm:
+    enabled: false
+  database-schema-update: true
+  check-process-definitions: true
+  process-definition-location-prefix: classpath*:/processes/
+  history-level: audit
+  process:
+    definition-cache-limit: -1
+  event-logging-enabled: false
+
+# ---- Logging ----
+logging:
+  level:
+    root: WARN
+    com.syncflow: INFO
+  file:
+    path: ${LOG_PATH:/var/log/syncflow}

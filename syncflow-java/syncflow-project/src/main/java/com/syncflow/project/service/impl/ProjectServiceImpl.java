@@ -4,6 +4,7 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.syncflow.common.enums.ErrorCode;
 import com.syncflow.common.exception.BusinessException;
 import com.syncflow.common.util.SecurityUtils;
+import com.syncflow.common.vo.TreeNodeVO;
 import com.syncflow.project.dto.*;
 import com.syncflow.project.entity.Milestone;
 import com.syncflow.project.entity.Project;
@@ -664,5 +665,57 @@ public class ProjectServiceImpl implements ProjectService {
         }
         project.setStatus(status);
         projectMapper.updateById(project);
+    }
+
+    // -----------------------------------------------------------------------
+    //  Navigation tree
+    // -----------------------------------------------------------------------
+
+    @Override
+    public List<TreeNodeVO> getNavigationTree() {
+        List<Project> allProjects = projectMapper.selectProjectTree();
+        if (allProjects.isEmpty()) {
+            return List.of();
+        }
+
+        List<TreeNodeVO> roots = new ArrayList<>();
+        Map<Long, TreeNodeVO> nodeMap = new LinkedHashMap<>();
+
+        for (Project p : allProjects) {
+            TreeNodeVO node = new TreeNodeVO();
+            node.setId(String.valueOf(p.getId()));
+            node.setName(p.getName());
+            node.setType("project");
+            node.setProgress(p.getProgress());
+            node.setChildren(new ArrayList<>());
+            nodeMap.put(p.getId(), node);
+        }
+
+        for (Project p : allProjects) {
+            TreeNodeVO node = nodeMap.get(p.getId());
+            if (p.getParentId() != null && nodeMap.containsKey(p.getParentId())) {
+                nodeMap.get(p.getParentId()).getChildren().add(node);
+            } else {
+                roots.add(node);
+            }
+        }
+
+        // Add phases as children of each project
+        for (Project p : allProjects) {
+            TreeNodeVO projectNode = nodeMap.get(p.getId());
+            List<com.syncflow.project.entity.ProjectPhase> phases =
+                    phaseMapper.selectByProjectId(p.getId());
+            for (com.syncflow.project.entity.ProjectPhase phase : phases) {
+                TreeNodeVO phaseNode = new TreeNodeVO();
+                phaseNode.setId(String.valueOf(phase.getId()));
+                phaseNode.setName(phase.getName());
+                phaseNode.setType("stage");
+                phaseNode.setProgress(phase.getProgress());
+                phaseNode.setChildren(new ArrayList<>());
+                projectNode.getChildren().add(phaseNode);
+            }
+        }
+
+        return roots;
     }
 }

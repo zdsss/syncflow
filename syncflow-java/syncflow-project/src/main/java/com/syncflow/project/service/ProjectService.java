@@ -1,5 +1,6 @@
 package com.syncflow.project.service;
 
+import com.syncflow.common.vo.TreeNodeVO;
 import com.syncflow.project.dto.*;
 
 import java.util.List;
@@ -110,4 +111,9 @@ public interface ProjectService {
      * @param status new status value
      */
     void updateProjectStatus(Long id, Integer status);
+
+    /**
+     * Build a navigation tree of projects/stages/tasks for the frontend sidebar.
+     */
+    List<TreeNodeVO> getNavigationTree();
 }

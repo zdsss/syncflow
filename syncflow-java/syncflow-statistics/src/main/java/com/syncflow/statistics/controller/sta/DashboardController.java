@@ -178,4 +178,14 @@ public class DashboardController {
         DashboardOverviewVO result = dashboardService.getOverview();
         return Result.success(result);
     }
+
+    /**
+     * Frontend-aligned flat dashboard stats matching the frontend dashboardData shape.
+     */
+    @GetMapping("/stats")
+    public Result<FrontendDashboardVO> getFrontendDashboard(
+            @RequestParam(required = false) Long projectId) {
+        FrontendDashboardVO result = dashboardService.getFrontendDashboard(projectId);
+        return Result.success(result);
+    }
 }

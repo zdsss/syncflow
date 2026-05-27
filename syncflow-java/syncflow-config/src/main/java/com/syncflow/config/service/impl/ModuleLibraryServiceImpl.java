@@ -303,10 +303,10 @@ public class ModuleLibraryServiceImpl implements ModuleLibraryService {
         vo.setSpecName(spec.getSpecName());
         vo.setCrossSection(spec.getCrossSection());
         vo.setMaterial(spec.getMaterial());
-        vo.setWallThickness(spec.getWallThickness());
+        vo.setWallThickness(spec.getWallThickness() != null ? spec.getWallThickness().toPlainString() + "mm" : null);
         vo.setConnectionType(spec.getConnectionType());
         vo.setSpecCode(spec.getSpecCode());
-        vo.setStatus(spec.getStatus());
+        vo.setStatus(spec.getStatus() != null ? (spec.getStatus() == 1 ? "已发布" : spec.getStatus() == 2 ? "已归档" : "编辑中") : null);
         return vo;
     }
 

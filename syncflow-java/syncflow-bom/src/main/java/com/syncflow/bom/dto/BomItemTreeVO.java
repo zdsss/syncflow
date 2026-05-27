@@ -1,16 +1,12 @@
 package com.syncflow.bom.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
-/**
- * Tree-structured view object for a BOM item.
- * <p>
- * Children are nested recursively.
- */
 @Data
 public class BomItemTreeVO {
 
@@ -46,16 +42,25 @@ public class BomItemTreeVO {
 
     private BigDecimal weight;
 
+    @JsonProperty("weightDisplay")
+    public String getWeightDisplay() {
+        return weight != null ? weight.stripTrailingZeros().toPlainString() : "";
+    }
+
     private BigDecimal totalWeight;
 
     private BigDecimal quantity;
 
-    /** Source type code: MADE, PURCHASED, SUBCONTRACT. */
     private String sourceType;
 
     private Boolean isVirtual;
 
     private String storageLocation;
+
+    @JsonProperty("location")
+    public String getLocation() {
+        return storageLocation;
+    }
 
     private String unitOfMeasure;
 
@@ -69,6 +74,5 @@ public class BomItemTreeVO {
 
     private LocalDateTime updatedAt;
 
-    /** Child items in the tree. */
     private List<BomItemTreeVO> children;
 }

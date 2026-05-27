@@ -69,7 +69,7 @@ class ModuleLibraryControllerTest {
         vo.setSpecName("Spec A");
         vo.setCrossSection("20x30");
         vo.setMaterial("Steel");
-        vo.setStatus(0);
+        vo.setStatus("0");
         return vo;
     }
 
@@ -371,7 +371,7 @@ class ModuleLibraryControllerTest {
         @DisplayName("should publish a spec")
         void shouldPublishSpec() throws Exception {
             SpecVO published = buildSpecVO();
-            published.setStatus(1);
+            published.setStatus("1");
             when(moduleLibraryService.publishSpec(1L)).thenReturn(published);
 
             mockMvc.perform(post("/api/config/modules/specs/1/publish"))

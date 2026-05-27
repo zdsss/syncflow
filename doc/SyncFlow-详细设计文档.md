@@ -22,7 +22,7 @@
 | 数据库 | PostgreSQL 16 |
 | 缓存 | Redis 7 |
 | 文件存储 | MinIO |
-| 前端框架 | React 19 + TypeScript + Vite 8 + Ant Design 6 |
+| 前端框架 | Next.js 16 + React 19 + TypeScript + Tailwind CSS 4 + shadcn/ui |
 
 ---
 
@@ -112,8 +112,8 @@ SyncFlow v2 采用前后端分离的模块化单体架构，分层设计如下�
 ```
 ┌──────────────────────────────────────────────────────────────────────────────┐
 │                            前端层 Frontend                                   │
-│    React 19 + TypeScript + Vite 8 + Ant Design 6 + Zustand 5                │
-│    ECharts 6 (图表) + @dnd-kit (拖拽) + STOMP over SockJS (WebSocket)       │
+│    Next.js 16 + React 19 + TypeScript + Tailwind CSS 4 + shadcn/ui          │
+│    Recharts (图表) + STOMP over SockJS (WebSocket)                          │
 ├──────────────────────────────────────────────────────────────────────────────┤
 │                          HTTP / WebSocket                                    │
 ├──────────────────────────────────────────────────────────────────────────────┤
@@ -143,7 +143,7 @@ SyncFlow v2 采用前后端分离的模块化单体架构，分层设计如下�
 
 **请求处理流程**：
 
-1. 前端 React SPA 通过 Vite 开发服务器（端口 5173）代理 API 请求到后端（端口 8088）
+1. 前端 Next.js 应用（端口 3000）通过 API Routes 代理请求到后端（端口 8088）
 2. 后端 Spring Boot 处理 HTTP 请求，经过 JWT 认证过滤器验证身份
 3. 请求路由到对应业务模块的 Controller → Service → MyBatis-Plus Mapper
 4. 审批相关操作通过 syncflow-workflow 模块调用 Flowable 引擎
@@ -190,27 +190,26 @@ syncflow-app
 
 | 维度 | 技术选型 | 说明 |
 |------|---------|------|
-| 框架 | React 19 + TypeScript | 函数组件 + Hooks |
-| 构建工具 | Vite 8 | 毫秒级启动，HMR 热更新 |
-| UI 组件库 | Ant Design 6 | 企业级组件库，中文文档完善 |
-| 状态管理 | Zustand 5 | 9 个 Store（auth/project/task/file/config/dashboard/approval/notification/bom） |
-| 路由 | React Router 6 | 嵌套路由、路由守卫、懒加载 |
-| 图表 | ECharts 6 | 甘特图、统计图表、驾驶舱可视化 |
-| 拖拽 | @dnd-kit/core | 看板拖拽、任务排序 |
+| 框架 | Next.js 16 + React 19 + TypeScript | App Router + Server Components |
+| 样式 | Tailwind CSS 4 | 工具类优先，CSS 变量主题系统 |
+| UI 组件库 | shadcn/ui (Radix UI) | 无头组件，完全可控，60+ 组件 |
+| 状态管理 | React useState + Server State | 页面级状态，无全局 Store |
+| 路由 | Next.js App Router | 文件系统路由，自动代码分割 |
+| 图表 | Recharts | 统计图表、驾驶舱可视化 |
+| 表单 | React Hook Form + Zod | 类型安全的表单验证 |
 | 实时通信 | STOMP over SockJS | WebSocket 双向通信，任务状态变更、审批通知实时推送 |
-| 测试 | Vitest + @testing-library/react + Playwright | 单元测试 + E2E 测试 |
+| 测试 | Vitest + @testing-library/react | 单元测试 |
 
 **前端代码结构**：
 
 | 目录 | 说明 | 文件数 |
 |------|------|--------|
-| src/pages/ | 24 个页面模块（dashboard/project/todo/mytasks/bom/process/config/modules/files/approval/query/resources/knowledge/template/personal/settings/...） | 24 |
-| src/services/ | API 服务层（17 个 service 文件，封装所有 HTTP 请求） | 17 |
-| src/stores/ | Zustand 状态管理 | 9 |
-| src/components/ | 公共组件（Layout, Header, Sidebar, GlobalSearch, AiPanel, KanbanView, GanttChart...） | — |
-| src/types/ | TypeScript 类型定义 | — |
-| src/constants/ | 枚举常量（任务状态、优先级、阶段...） | — |
-| src/i18n/ | 国际化（中文/英文） | — |
+| src/app/ | 6 个页面（workspace/dashboard/project/files/bom/config） + API Routes | 20+ |
+| src/components/ui/ | shadcn/ui 组件库 | 60+ |
+| src/components/shared/ | 布局组件（Sidebar, TopBar, TaskQuickBar） | 3 |
+| src/lib/ | 工具函数 + Mock 数据 | 3 |
+| src/hooks/ | 自定义 Hooks | 1 |
+| src/db/ | Drizzle ORM（schema, seed, types） | 4 |
 
 ## 2.4 基础设施
 
@@ -2198,7 +2197,7 @@ SyncFlow 的审批不是每个模块各自硬编码，而是采用 **"声明式�
 
 
 > **适用范围**：后端开发、前端开发、架构设计
-> **技术基线**：Spring Boot 3.x + Java 17+ / React 19 + TypeScript + Vite 8
+> **技术基线**：Spring Boot 3.x + Java 21 / Next.js 16 + React 19 + TypeScript
 
 ---
 
@@ -2923,7 +2922,7 @@ public class GlobalExceptionHandler {
 
 | 状态 | 前端表现 | 说明 |
 |------|---------|------|
-| 首次加载 | 骨架屏（Skeleton） | 使用 Ant Design Skeleton 组件 |
+| 首次加载 | 骨架屏（Skeleton） | 使用 shadcn/ui Skeleton 组件 |
 | 局部刷新 | Spinner + 半透明遮罩 | 目标区域显示加载动画 |
 | 按钮提交 | 按钮置灰 + "提交中..." + Loading 图标 | 防止重复提交 |
 | 长任务 | Progress 进度条 + 预计时间 | 文件上传、数据导入等 |
@@ -3325,7 +3324,7 @@ public ResponseEntity<Result<ProjectVO>> create(
 
 ```
 ┌─────────────────────────────────────────────────────┐
-│                    前端 (React)                       │
+│                    前端 (Next.js)                     │
 │  @stomp/stompjs + sockjs-client                      │
 │  subscribe /topic/approval                           │
 │  subscribe /user/queue/notifications                 │
@@ -4250,21 +4249,17 @@ interface TaskStrategy {
 | 通知 CRUD + 已读管理 | 已完成 | 6 个 API 端点 |
 | STOMP WebSocket 配置 | 已完成 | SockJS 端点 + 认证集成 |
 
-### Phase 5: 数据迁移 + 前端联调 + 切换上线（进行中）
+### Phase 5: 前端重构 + 联调（已完成）
 
-**时间跨度**：第 8-9 月
-**目标**：NestJS 数据迁移到 Spring Boot，前端适配新 API，灰度切换
+**时间跨度**：2026-05
+**目标**：前端从 React+Vite+AntDesign 迁移至 Next.js+Tailwind+shadcn/ui，API 层对齐
 
 | 任务 | 优先级 | 状态 |
 |------|--------|------|
-| UUID → BIGSERIAL 数据迁移脚本 | P0 | 进行中 |
-| 前端 API 服务层适配（17 个 service 文件更新端点和响应格式） | P0 | 进行中 |
-| 前端 WebSocket 迁移（Socket.IO → STOMP） | P1 | 待开始 |
-| 前端页面适配新 API 响应格式 | P1 | 待开始 |
-| 数据迁移前后一致性校验 | P0 | 待开始 |
-| 灰度发布（部分用户先行切换） | P0 | 待开始 |
-| 所有页面功能回归验证 | P0 | 待开始 |
-| 旧系统下线 + 数据归档 | P1 | 待开始 |
+| 前端重构为 Next.js 16 + Tailwind CSS 4 + shadcn/ui | P0 | 已完成 |
+| API Routes 代理层对接 Spring Boot 后端 | P0 | 已完成 |
+| Mock 数据 fallback 确保前端独立可运行 | P1 | 已完成 |
+| NestJS 旧后端下线归档 | P1 | 已完成 |
 
 ## 18.2 工作量统计
 
@@ -4304,13 +4299,12 @@ interface TaskStrategy {
 
 | 维度 | 数量 |
 |------|------|
-| TypeScript 源文件 | 311 |
-| 测试文件 | 133 |
-| 测试用例 | 1,614 |
-| 页面组件 | 24 |
-| Zustand Store | 9 |
-| API Service 文件 | 17 |
-| 共享组件 | 50+ |
+| 页面 | 6 (workspace/dashboard/project/files/bom/config) |
+| API Routes | 16 (8 资源 × GET/POST + [id] CRUD) |
+| shadcn/ui 组件 | 60+ |
+| 布局组件 | 3 (Sidebar, TopBar, TaskQuickBar) |
+| Hooks | 1 (use-mobile) |
+| DB Schema 表 | 12 (Drizzle ORM) |
 
 ### 18.2.5 API 端点统计
 
@@ -4342,7 +4336,7 @@ interface TaskStrategy {
 | JWT 认证全链路 | 通过 | 登录 → Token → 刷新 → 注销 |
 | Flowable BPMN 自动部署 | 通过 | 7 个流程定义文件启动时自动部署 |
 | 审批流程推进 | 通过 | 发起 → 审批 → 完成，状态正确回写 |
-| 前端通过 Vite Proxy 登录 | 通过 | /api 代理到 localhost:8080 |
+| 前端通过 Next.js API Routes 登录 | 通过 | /api/auth/login 代理到 localhost:8088 |
 | 数据库迁移脚本 | 通过 | 5 个迁移文件，38 张表全部创建 |
 
 ### 18.3.2 后端测试覆盖
@@ -4360,9 +4354,8 @@ interface TaskStrategy {
 | 任务 | 说明 | 预估工作量 |
 |------|------|-----------|
 | 8 个部分实现的审批场景 | 里程碑审批、任务完成审批、BOM 变更审批、委托、抄送等 | 5-8 天 |
-| 前端 WebSocket 迁移 | Socket.IO → STOMP/SockJS 客户端 | 2 天 |
-| 前端 API 响应格式适配 | 17 个 service 文件更新端点路径和响应解析 | 2-3 天 |
-| 前端 Zustand Store 类型更新 | 数据模型类型适配（UUID → BIGINT） | 1-2 天 |
+| 前端 WebSocket 集成 | STOMP/SockJS 客户端接入实时通知 | 2 天 |
+| BOM items GET 端点 | 后端补充 BOM items 列表查询接口 | 0.5 天 |
 
 ### 18.4.2 P2 优先级（功能扩展）
 

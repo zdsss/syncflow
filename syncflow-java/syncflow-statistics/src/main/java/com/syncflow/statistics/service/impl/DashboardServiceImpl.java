@@ -499,6 +499,103 @@ public class DashboardServiceImpl implements DashboardService {
     }
 
     // -----------------------------------------------------------------------
+    //  Frontend-aligned flat dashboard
+    // -----------------------------------------------------------------------
+
+    @Override
+    public FrontendDashboardVO getFrontendDashboard(Long projectId) {
+        FrontendDashboardVO vo = new FrontendDashboardVO();
+
+        // Active projects count
+        LambdaQueryWrapper<Project> projectWrapper = new LambdaQueryWrapper<>();
+        projectWrapper.isNull(Project::getDeletedAt)
+                      .in(Project::getStatus, 1, 2, 4);
+        vo.setActiveProjects(projectMapper.selectCount(projectWrapper));
+
+        // Completed tasks
+        LambdaQueryWrapper<Task> completedWrapper = new LambdaQueryWrapper<>();
+        applyProjectFilter(completedWrapper, projectId);
+        completedWrapper.eq(Task::getStatus, 4);
+        vo.setCompletedTasks(taskMapper.selectCount(completedWrapper));
+
+        // Overdue tasks
+        LambdaQueryWrapper<Task> overdueWrapper = new LambdaQueryWrapper<>();
+        applyProjectFilter(overdueWrapper, projectId);
+        overdueWrapper.eq(Task::getIsOverdue, true)
+                      .ne(Task::getStatus, 4)
+                      .ne(Task::getStatus, 5);
+        vo.setOverdueTasks(taskMapper.selectCount(overdueWrapper));
+
+        // Risks
+        LambdaQueryWrapper<Task> riskWrapper = new LambdaQueryWrapper<>();
+        applyProjectFilter(riskWrapper, projectId);
+        riskWrapper.eq(Task::getType, "RISK")
+                   .ne(Task::getStatus, 5);
+        vo.setRisks(taskMapper.selectCount(riskWrapper));
+
+        // Current tasks (in progress, due this week)
+        LocalDate today = LocalDate.now();
+        LocalDate startOfWeek = today.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        LocalDate endOfWeek = today.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
+        LambdaQueryWrapper<Task> currentWrapper = new LambdaQueryWrapper<>();
+        applyProjectFilter(currentWrapper, projectId);
+        currentWrapper.eq(Task::getStatus, 2)
+                      .ge(Task::getDueDate, startOfWeek)
+                      .le(Task::getDueDate, endOfWeek);
+        vo.setCurrentTasks(taskMapper.selectCount(currentWrapper));
+
+        // Next tasks (due next week)
+        LocalDate nextMonday = today.with(TemporalAdjusters.next(DayOfWeek.MONDAY));
+        LocalDate nextSunday = nextMonday.with(TemporalAdjusters.next(DayOfWeek.SUNDAY));
+        LambdaQueryWrapper<Task> nextWrapper = new LambdaQueryWrapper<>();
+        applyProjectFilter(nextWrapper, projectId);
+        nextWrapper.ne(Task::getStatus, 4)
+                   .ne(Task::getStatus, 5)
+                   .ge(Task::getDueDate, nextMonday)
+                   .le(Task::getDueDate, nextSunday);
+        vo.setNextTasks(taskMapper.selectCount(nextWrapper));
+
+        // In-transit issues (type = ISSUE, status = in_progress)
+        LambdaQueryWrapper<Task> issueWrapper = new LambdaQueryWrapper<>();
+        applyProjectFilter(issueWrapper, projectId);
+        issueWrapper.eq(Task::getType, "ISSUE")
+                    .eq(Task::getStatus, 2);
+        vo.setInTransitIssues(taskMapper.selectCount(issueWrapper));
+
+        // Hours ranking
+        ManHourRankingVO ranking = getManHourRanking(projectId);
+        if (ranking != null && ranking.getItems() != null) {
+            vo.setHoursRanking(ranking.getItems().stream()
+                    .map(item -> {
+                        FrontendDashboardVO.HoursRankingItem h = new FrontendDashboardVO.HoursRankingItem();
+                        h.setName(item.getUserName());
+                        h.setHours(item.getHours() != null ? item.getHours().doubleValue() : 0);
+                        return h;
+                    })
+                    .collect(Collectors.toList()));
+        } else {
+            vo.setHoursRanking(Collections.emptyList());
+        }
+
+        // On-time rate
+        List<OnTimeRateVO> onTimeRates = getOnTimeRateRanking(projectId);
+        if (onTimeRates != null) {
+            vo.setOnTimeRate(onTimeRates.stream()
+                    .map(item -> {
+                        FrontendDashboardVO.OnTimeRateItem o = new FrontendDashboardVO.OnTimeRateItem();
+                        o.setName(item.getUserName());
+                        o.setRate(item.getRate() != null ? item.getRate().doubleValue() : 0);
+                        return o;
+                    })
+                    .collect(Collectors.toList()));
+        } else {
+            vo.setOnTimeRate(Collections.emptyList());
+        }
+
+        return vo;
+    }
+
+    // -----------------------------------------------------------------------
     //  Private helpers
     // -----------------------------------------------------------------------
 

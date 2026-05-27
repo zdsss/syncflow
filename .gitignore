@@ -1,8 +1,9 @@
 # Dependencies
 node_modules/
-package-lock.json
 
 # Build output
+.next/
+out/
 dist/
 coverage/
 
@@ -35,5 +36,9 @@ npm-debug.log*
 
 # Claude
 .claude/
+
+# Binary artifacts (too large for git)
+scripts/minio.bin
+
+# GitHub workflows (requires workflow scope token)
 .github/workflows/
-doc/bak/*.pdf

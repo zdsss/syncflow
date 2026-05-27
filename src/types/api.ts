@@ -1,7 +1,0 @@
-export interface ApiResult<T> {
-  code: number;
-  message: string;
-  data: T;
-  timestamp: number;
-  success: boolean;
-}

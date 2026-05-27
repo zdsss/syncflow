@@ -1,6 +1,7 @@
 package com.syncflow.project.controller.prj;
 
 import com.syncflow.common.result.Result;
+import com.syncflow.common.vo.TreeNodeVO;
 import com.syncflow.project.dto.*;
 import com.syncflow.project.service.MilestoneService;
 import com.syncflow.project.service.PhaseService;
@@ -41,6 +42,15 @@ public class ProjectController {
     @GetMapping
     public Result<List<ProjectVO>> getProjectTree() {
         List<ProjectVO> tree = projectService.getProjectTree();
+        return Result.success(tree);
+    }
+
+    /**
+     * Get the navigation tree (projects/stages) for the frontend sidebar.
+     */
+    @GetMapping("/tree")
+    public Result<List<TreeNodeVO>> getNavigationTree() {
+        List<TreeNodeVO> tree = projectService.getNavigationTree();
         return Result.success(tree);
     }
 

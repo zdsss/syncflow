@@ -1,0 +1,54 @@
+# =============================================================================
+# SyncFlow systemd service
+# Installed to: /etc/systemd/system/syncflow.service
+# Manage: systemctl start|stop|restart|status syncflow
+# =============================================================================
+[Unit]
+Description=SyncFlow - Industrial Project Management System
+After=network.target postgresql.service minio.service
+Wants=postgresql.service minio.service
+
+[Service]
+Type=simple
+User=syncflow
+Group=syncflow
+WorkingDirectory=/opt/syncflow
+
+# Dash-prefix = non-fatal if file missing (user may not have created env yet)
+EnvironmentFile=-/opt/syncflow/env
+
+# Create log dir before starting (systemd needs it for StandardOutput)
+ExecStartPre=/bin/mkdir -p /opt/syncflow/logs
+
+# JVM tuned for 2GB total server RAM
+ExecStart=/usr/bin/java \
+  -Xms128m -Xmx384m \
+  -XX:+UseSerialGC \
+  -XX:MaxMetaspaceSize=128m \
+  -XX:+HeapDumpOnOutOfMemoryError \
+  -XX:HeapDumpPath=/opt/syncflow/logs \
+  -Dspring.profiles.active=prod \
+  -Dserver.port=8088 \
+  -Djava.security.egd=file:/dev/./urandom \
+  -jar /opt/syncflow/syncflow.jar
+
+# Restart policy — 3 tries in 5 minutes, then give up
+Restart=on-failure
+RestartSec=10
+StartLimitInterval=300
+StartLimitBurst=3
+
+# Lightweight security (compatible with Spring Boot + Flowable + MinIO)
+NoNewPrivileges=yes
+PrivateTmp=yes
+
+# Resource limits for 2GB server
+MemoryMax=512M
+LimitNOFILE=65536
+
+# Logging
+StandardOutput=append:/opt/syncflow/logs/app.log
+StandardError=append:/opt/syncflow/logs/app.log
+
+[Install]
+WantedBy=multi-user.target

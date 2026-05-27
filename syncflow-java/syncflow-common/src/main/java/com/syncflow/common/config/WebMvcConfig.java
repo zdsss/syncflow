@@ -7,9 +7,10 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 /**
  * Web MVC configuration.
  * <p>
- * Enables CORS for the Vite dev-server ({@code localhost:5173}) and
- * the production origin.  All API endpoints under {@code /api/**} accept
- * standard CRUD methods and common headers.
+ * Enables CORS for the Vite dev-server ({@code localhost:5173}),
+ * the Next.js dev-server ({@code localhost:3000}), and the production origin.
+ * All API endpoints under {@code /api/**} accept standard CRUD methods
+ * and common headers.
  */
 @Configuration
 public class WebMvcConfig implements WebMvcConfigurer {
@@ -19,7 +20,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
      */
     private static final String[] ALLOWED_ORIGINS = {
             "http://localhost:5173",
-            "http://127.0.0.1:5173"
+            "http://127.0.0.1:5173",
+            "http://localhost:3000",
+            "http://127.0.0.1:3000"
     };
 
     @Override
